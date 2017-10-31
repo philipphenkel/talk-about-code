@@ -4,6 +4,5 @@
 ## Backlog
 
 - Keep language selection in sync
-- Fix admin role on Safari
-- Indicate server connection
+- Indicate status of connectivity (transport up/down)
 - Indicate amount of attendees

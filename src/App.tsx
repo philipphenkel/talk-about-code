@@ -34,6 +34,12 @@ enum Role {
   Admin = 'admin',
 }
 
+interface BoardConfig {
+  role: Role;
+  language: string;
+  content: string;
+}
+
 class App extends React.Component<any, any> {
 
   private editor: monaco.editor.ICodeEditor;
@@ -53,7 +59,6 @@ class App extends React.Component<any, any> {
     this.onSave = this.onSave.bind(this);
     this.onEditorChange = this.onEditorChange.bind(this);
     this.refreshBoardConfigInUrl = this.refreshBoardConfigInUrl.bind(this);
-    this.createUrlPath = this.createUrlPath.bind(this);
 
     this.state = {
       languages: ['javascript'],
@@ -103,7 +108,7 @@ class App extends React.Component<any, any> {
 
     console.log('location ' + JSON.stringify(this.props.location));
 
-    // Parse URL <host>/board/<boardId>#<content_base64>
+    // Parse URL <host>/board/<boardId>/<boardConfigurationBase64>
     const loc = this.props.location;
     const pathArray = loc.pathname.split('/');
     let boardId = '';
@@ -111,20 +116,21 @@ class App extends React.Component<any, any> {
     let role = Role.Admin;
     let language = editor.getModel().getModeId();
 
-    if (pathArray.length === 3 && pathArray[1] === 'board' && pathArray[2] !== '') {
-      // connect to existing board
+    if (pathArray.length >= 2 && pathArray[1] === 'board' && pathArray[2]) {
+      // Connect to existing board
       boardId = pathArray[2];
 
-      // apply board config
-      if (loc.hash !== '') {
-        const encodedHashValue = loc.hash.slice(1);
-        const boardConfig = JSON.parse(this.atou(encodedHashValue));
+      // Apply board config
+      if (pathArray.length >= 3) {
+        const encodedHashValue = pathArray[3];
+        const boardConfig = JSON.parse(App.atou(encodedHashValue));
+        console.log(boardConfig);
         boardContent = boardConfig.content;
         role = boardConfig.role;
         language = boardConfig.language;
       }
     } else {
-      // create new board
+      // Create new board
       boardId = uuidv4();
     }
 
@@ -135,7 +141,14 @@ class App extends React.Component<any, any> {
       .map(function (lang: monaco.languages.ILanguageExtensionPoint) { return lang.id; });
     // languages.sort();
 
-    const path = this.createUrlPath(boardId, role, editor.getModel().getModeId(), editor.getValue());
+    const path = App.encodeUrlPath(
+      boardId,
+      {
+        role: role,
+        language: language,
+        content: boardContent
+      }
+    );
     this.props.history.replace(path);
 
     this.setState({
@@ -146,27 +159,29 @@ class App extends React.Component<any, any> {
     });
   }
 
-  createUrlPath(boardId: string, role: Role, language: string, content: string) {
-    const hashValue = { role, language, content };
-    return '/board/' + boardId + '#' + this.utoa(JSON.stringify(hashValue));
+  static encodeUrlPath(boardId: string, boardConfig: BoardConfig) {
+    return '/board/' + boardId + '/' + this.utoa(JSON.stringify(boardConfig));
   }
 
   refreshBoardConfigInUrl() {
-    const newUrl = this.createUrlPath(
+    const path = App.encodeUrlPath(
       this.state.boardId,
-      this.state.role,
-      this.editor.getModel().getModeId(),
-      this.editor.getValue()
+      {
+        role: this.state.role,
+        language: this.editor.getModel().getModeId(),
+        content: this.editor.getValue()
+      }
     );
-    this.props.history.replace(newUrl);
+    this.props.history.replace(path);
   }
 
   // ucs-2 string to base64 encoded ascii
-  utoa(str: string) {
+  static utoa(str: string) {
     return window.btoa(encodeURIComponent(str));
   }
+  
   // base64 encoded ascii to ucs-2 string
-  atou(str: string) {
+  static atou(str: string) {
     return decodeURIComponent(window.atob(str));
   }
 
@@ -174,11 +189,13 @@ class App extends React.Component<any, any> {
     this.setState({ isShareDialogOpen: true });
 
     if (this.editor) {
-      const path = this.createUrlPath(
+      const path = App.encodeUrlPath(
         this.state.boardId,
-        Role.User,
-        this.editor.getModel().getModeId(),
-        this.editor.getValue()
+        {
+          role: Role.User,
+          language: this.editor.getModel().getModeId(),
+          content: this.editor.getValue()
+        }
       );
       return window.location.host + path;
     } else {
