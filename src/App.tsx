@@ -29,6 +29,11 @@ fayeClient.on('transport:down', () => {
   console.log('transport:down');
 });
 
+enum Role {
+  User = 'user',
+  Admin = 'admin',
+}
+
 class App extends React.Component<any, any> {
 
   private editor: monaco.editor.ICodeEditor;
@@ -47,7 +52,8 @@ class App extends React.Component<any, any> {
     this.editorDidMount = this.editorDidMount.bind(this);
     this.onSave = this.onSave.bind(this);
     this.onEditorChange = this.onEditorChange.bind(this);
-    this.updateUrlHash = this.updateUrlHash.bind(this);
+    this.refreshBoardConfigInUrl = this.refreshBoardConfigInUrl.bind(this);
+    this.createUrlPath = this.createUrlPath.bind(this);
 
     this.state = {
       languages: ['javascript'],
@@ -55,6 +61,7 @@ class App extends React.Component<any, any> {
       isShareDialogOpen: false,
       isSaveDialogOpen: false,
       boardId: '',
+      role: Role.User,
     };
 
     this.muiTheme = getMuiTheme({
@@ -101,20 +108,22 @@ class App extends React.Component<any, any> {
     const pathArray = loc.pathname.split('/');
     let boardId = '';
     let boardContent = '';
+    let role = Role.Admin;
 
     if (pathArray.length === 3 && pathArray[1] === 'board' && pathArray[2] !== '') {
       // connect to existing board
       boardId = pathArray[2];
 
-      // pre-populate board content
+      // apply board config
       if (loc.hash !== '') {
-        const encodedContent = loc.hash.slice(1);
-        boardContent = this.atou(encodedContent);
+        const encodedHashValue = loc.hash.slice(1);
+        const boardConfig = JSON.parse(this.atou(encodedHashValue));
+        boardContent = boardConfig.content;
+        role = boardConfig.role;
       }
     } else {
       // create new board
       boardId = uuidv4();
-      this.props.history.replace('/board/' + boardId);
     }
 
     this.syncEngine = new SyncEngine(editor, fayeClient, boardId, boardContent);
@@ -124,11 +133,30 @@ class App extends React.Component<any, any> {
       .map(function (lang: monaco.languages.ILanguageExtensionPoint) { return lang.id; });
     // languages.sort();
 
+    const path = this.createUrlPath(boardId, role, editor.getValue(), editor.getModel().getModeId());
+    this.props.history.replace(path);
+
     this.setState({
       selectedLanguage: languages.indexOf(editor.getModel().getModeId()),
       languages: languages,
       boardId: boardId,
+      role: role
     });
+  }
+
+  createUrlPath(boardId: string, role: Role, language: string, content: string) {
+    const hashValue = { role, language, content };
+    return '/board/' + boardId + '#' + this.utoa(JSON.stringify(hashValue));
+  }
+
+  refreshBoardConfigInUrl() {
+    const newUrl = this.createUrlPath(
+      this.state.boardId,
+      this.state.role,
+      this.editor.getValue(),
+      this.editor.getModel().getModeId()
+    );
+    this.props.history.replace(newUrl);
   }
 
   // ucs-2 string to base64 encoded ascii
@@ -144,17 +172,18 @@ class App extends React.Component<any, any> {
     this.setState({ isShareDialogOpen: true });
 
     if (this.editor) {
-      this.updateUrlHash();
-      return window.location.href;
+      const path = this.createUrlPath(
+        this.state.boardId,
+        Role.User,
+        this.editor.getValue(),
+        this.editor.getModel().getModeId());
+      return window.location.host + path;
     } else {
       return '';
     }
   }
 
   onSave() {
-    if (this.editor) {
-      this.updateUrlHash();
-    }
     this.setState({ isSaveDialogOpen: true });
   }
 
@@ -169,12 +198,8 @@ class App extends React.Component<any, any> {
   onEditorChange(event: any) {
     clearTimeout(this.hashUpdateTimer);
     this.hashUpdateTimer = window.setTimeout(
-      this.updateUrlHash,
+      this.refreshBoardConfigInUrl,
       2000);
-  }
-
-  updateUrlHash() {
-    this.props.history.replace('/board/' + this.state.boardId + '#' + this.utoa(this.editor.getValue()));
   }
 
   render() {
@@ -198,8 +223,7 @@ class App extends React.Component<any, any> {
       title: {
         fontFamily: 'Permanent Marker',
         color: 'white',
-        fontSize: 30,
-        paddingLeft: 30
+        fontSize: 30
       },
       button: {
         color: 'white'
@@ -211,6 +235,25 @@ class App extends React.Component<any, any> {
       languageItems.push(<MenuItem value={i} key={i} primaryText={this.state.languages[i].toUpperCase()} />);
     }
 
+    const renderAdminControls = () => {
+      if (this.state.role === Role.Admin) {
+        return <ToolbarGroup>
+          <FlatButton label="New" style={styles.button} containerElement={<Link to="/" target="_blank" />} />
+          <FlatButton label="Save" style={styles.button} onClick={this.onSave} />
+          <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
+          <DropDownMenu
+            value={this.state.selectedLanguage}
+            labelStyle={styles.button}
+            onChange={this.onSelectLanguage}
+          >
+            {languageItems}
+          </DropDownMenu>
+        </ToolbarGroup>;
+      } else {
+        return '';
+      }
+    };
+
     return (
       <MuiThemeProvider muiTheme={this.muiTheme}>
         <div className="App">
@@ -220,23 +263,8 @@ class App extends React.Component<any, any> {
             <ToolbarGroup>
               <ToolbarTitle text="Talk About Code" style={styles.title} />
             </ToolbarGroup>
-
-            <ToolbarGroup>
-              <FlatButton label="New" style={styles.button} linkButton={true} containerElement={<Link to="/" target="_blank" />} />
-              <FlatButton label="Save" style={styles.button} onClick={this.onSave} />
-              <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
-
-              <DropDownMenu
-                maxHeight={400}
-                value={this.state.selectedLanguage}
-                labelStyle={styles.button}
-                onChange={this.onSelectLanguage}
-              >
-                {languageItems}
-              </DropDownMenu>
-            </ToolbarGroup>
+            {renderAdminControls()}
           </Toolbar>
-
           <div className="App-editor">
             <MonacoEditor
               options={options}
