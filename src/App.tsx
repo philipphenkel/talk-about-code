@@ -109,6 +109,7 @@ class App extends React.Component<any, any> {
     let boardId = '';
     let boardContent = '';
     let role = Role.Admin;
+    let language = editor.getModel().getModeId();
 
     if (pathArray.length === 3 && pathArray[1] === 'board' && pathArray[2] !== '') {
       // connect to existing board
@@ -120,6 +121,7 @@ class App extends React.Component<any, any> {
         const boardConfig = JSON.parse(this.atou(encodedHashValue));
         boardContent = boardConfig.content;
         role = boardConfig.role;
+        language = boardConfig.language;
       }
     } else {
       // create new board
@@ -133,11 +135,11 @@ class App extends React.Component<any, any> {
       .map(function (lang: monaco.languages.ILanguageExtensionPoint) { return lang.id; });
     // languages.sort();
 
-    const path = this.createUrlPath(boardId, role, editor.getValue(), editor.getModel().getModeId());
+    const path = this.createUrlPath(boardId, role, editor.getModel().getModeId(), editor.getValue());
     this.props.history.replace(path);
 
     this.setState({
-      selectedLanguage: languages.indexOf(editor.getModel().getModeId()),
+      selectedLanguage: languages.indexOf(language),
       languages: languages,
       boardId: boardId,
       role: role
@@ -153,8 +155,8 @@ class App extends React.Component<any, any> {
     const newUrl = this.createUrlPath(
       this.state.boardId,
       this.state.role,
-      this.editor.getValue(),
-      this.editor.getModel().getModeId()
+      this.editor.getModel().getModeId(),
+      this.editor.getValue()
     );
     this.props.history.replace(newUrl);
   }
@@ -175,8 +177,9 @@ class App extends React.Component<any, any> {
       const path = this.createUrlPath(
         this.state.boardId,
         Role.User,
-        this.editor.getValue(),
-        this.editor.getModel().getModeId());
+        this.editor.getModel().getModeId(),
+        this.editor.getValue()
+      );
       return window.location.host + path;
     } else {
       return '';
