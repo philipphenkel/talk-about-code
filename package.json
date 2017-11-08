@@ -10,14 +10,13 @@
     "@types/react": "^16.0.10",
     "@types/react-dom": "^16.0.1",
     "@types/react-monaco-editor": "^0.8.2",
-    "@types/react-router-dom": "^4.0.8",
     "clipboard": "^1.7.1",
     "faye": "^1.2.4",
+    "history": "^4.7.2",
     "material-ui": "^0.19.4",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
     "react-monaco-editor": "^0.10.1",
-    "react-router-dom": "^4.2.2",
     "react-scripts-ts": "2.7.0"
   },
   "scripts": {

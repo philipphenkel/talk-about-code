@@ -10,13 +10,13 @@ import FlatButton from 'material-ui/FlatButton';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
-import { withRouter } from 'react-router-dom';
-import { Link } from 'react-router-dom';
 import ShareDialog from './components/ShareDialog';
 import SaveDialog from './components/SaveDialog';
 import SyncEngine from './sync/SyncEngine';
 import { uuidv4 } from './sync/utils';
 import * as Clipboard from 'clipboard';
+import { History } from 'history';
+import createBrowserHistory from 'history/createBrowserHistory';
 
 const faye = require('faye');
 const fayeClient = new faye.Client('https://faye.brickcoder.com/bayeux');
@@ -40,13 +40,14 @@ interface BoardConfig {
   content: string;
 }
 
-class App extends React.Component<any, any> {
+export default class App extends React.Component<any, any> {
 
   private editor: monaco.editor.ICodeEditor;
   private muiTheme: MuiTheme;
   private syncEngine: SyncEngine;
   private clipBoard: Clipboard;
   private hashUpdateTimer: number;
+  private history: History;
 
   constructor(props: any) {
     super(props);
@@ -93,6 +94,7 @@ class App extends React.Component<any, any> {
   componentDidMount() {
     window.addEventListener('resize', this.onResize.bind(this));
     this.clipBoard = new Clipboard('.shareBoardButton', { text: this.onCopyToClipboard });
+    this.history = createBrowserHistory();
   }
 
   componentWillUnmount() {
@@ -106,28 +108,33 @@ class App extends React.Component<any, any> {
     this.editor = editor;
     this.editor.focus();
 
-    console.log('location ' + JSON.stringify(this.props.location));
+    console.log('location ' + JSON.stringify(this.history.location));
 
     // Parse URL <host>/board/<boardId>/<boardConfigurationBase64>
-    const loc = this.props.location;
+    const loc = this.history.location;
     const pathArray = loc.pathname.split('/');
+    console.log('pathArray ' + JSON.stringify(pathArray));
     let boardId = '';
     let boardContent = '';
     let role = Role.Admin;
     let language = editor.getModel().getModeId();
 
-    if (pathArray.length >= 2 && pathArray[1] === 'board' && pathArray[2]) {
+    if (pathArray.length >= 3 && pathArray[1] === 'board' && pathArray[2]) {
       // Connect to existing board
       boardId = pathArray[2];
 
       // Apply board config
-      if (pathArray.length >= 3) {
+      if (pathArray.length >= 4) {
         const encodedHashValue = pathArray[3];
-        const boardConfig = JSON.parse(App.atou(encodedHashValue));
-        console.log(boardConfig);
-        boardContent = boardConfig.content;
-        role = boardConfig.role;
-        language = boardConfig.language;
+        try {
+          const boardConfig = JSON.parse(App.atou(encodedHashValue));
+          console.log(boardConfig);
+          boardContent = boardConfig.content;
+          role = boardConfig.role;
+          language = boardConfig.language;
+        } catch (err) {
+          // ignore decoding errors, start as admin and sync content from others
+        }
       }
     } else {
       // Create new board
@@ -149,7 +156,7 @@ class App extends React.Component<any, any> {
         content: boardContent
       }
     );
-    this.props.history.replace(path);
+    this.history.replace(path);
 
     this.setState({
       selectedLanguage: languages.indexOf(language),
@@ -172,14 +179,14 @@ class App extends React.Component<any, any> {
         content: this.editor.getValue()
       }
     );
-    this.props.history.replace(path);
+    this.history.replace(path);
   }
 
   // ucs-2 string to base64 encoded ascii
   static utoa(str: string) {
     return window.btoa(encodeURIComponent(str));
   }
-  
+
   // base64 encoded ascii to ucs-2 string
   static atou(str: string) {
     return decodeURIComponent(window.atob(str));
@@ -258,7 +265,7 @@ class App extends React.Component<any, any> {
     const renderAdminControls = () => {
       if (this.state.role === Role.Admin) {
         return <ToolbarGroup>
-          <FlatButton label="New" style={styles.button} containerElement={<Link to="/" target="_blank" />} />
+          <FlatButton label="New" style={styles.button} containerElement={<a href="/" target="_blank" />} />
           <FlatButton label="Save" style={styles.button} onClick={this.onSave} />
           <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
           <DropDownMenu
@@ -298,5 +305,3 @@ class App extends React.Component<any, any> {
     );
   }
 }
-
-export default withRouter<{}>(App);
