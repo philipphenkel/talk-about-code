@@ -49,6 +49,20 @@ export default class App extends React.Component<any, any> {
   private hashUpdateTimer: number;
   private history: History;
 
+  static encodeUrlPath(boardId: string, boardConfig: BoardConfig) {
+    return '/board/' + boardId + '/' + this.utoa(JSON.stringify(boardConfig));
+  }
+
+  // ucs-2 string to base64 encoded ascii
+  static utoa(str: string) {
+    return window.btoa(encodeURIComponent(str));
+  }
+
+  // base64 encoded ascii to ucs-2 string
+  static atou(str: string) {
+    return decodeURIComponent(window.atob(str));
+  }
+
   constructor(props: any) {
     super(props);
 
@@ -63,7 +77,7 @@ export default class App extends React.Component<any, any> {
 
     this.state = {
       languages: ['javascript'],
-      selectedLanguage: 0,
+      selectedLanguage: 'javascript',
       isShareDialogOpen: false,
       isSaveDialogOpen: false,
       boardId: '',
@@ -143,7 +157,7 @@ export default class App extends React.Component<any, any> {
 
     this.syncEngine = new SyncEngine(editor, fayeClient, boardId, boardContent);
 
-    var languages = monaco.languages
+    const languages = monaco.languages
       .getLanguages()
       .map(function (lang: monaco.languages.ILanguageExtensionPoint) { return lang.id; });
     // languages.sort();
@@ -159,15 +173,11 @@ export default class App extends React.Component<any, any> {
     this.history.replace(path);
 
     this.setState({
-      selectedLanguage: languages.indexOf(language),
+      selectedLanguage: language,
       languages: languages,
       boardId: boardId,
       role: role
     });
-  }
-
-  static encodeUrlPath(boardId: string, boardConfig: BoardConfig) {
-    return '/board/' + boardId + '/' + this.utoa(JSON.stringify(boardConfig));
   }
 
   refreshBoardConfigInUrl() {
@@ -180,16 +190,6 @@ export default class App extends React.Component<any, any> {
       }
     );
     this.history.replace(path);
-  }
-
-  // ucs-2 string to base64 encoded ascii
-  static utoa(str: string) {
-    return window.btoa(encodeURIComponent(str));
-  }
-
-  // base64 encoded ascii to ucs-2 string
-  static atou(str: string) {
-    return decodeURIComponent(window.atob(str));
   }
 
   onCopyToClipboard(elem: Element): string {
@@ -257,25 +257,26 @@ export default class App extends React.Component<any, any> {
       }
     };
 
-    let languageItems: Array<JSX.Element> = [];
-    for (let i = 0; i < this.state.languages.length; i++) {
-      languageItems.push(<MenuItem value={i} key={i} primaryText={this.state.languages[i].toUpperCase()} />);
-    }
+    const languageItems = this.state.languages.map((language: string) => (
+      <MenuItem value={language} key={language} primaryText={language.toUpperCase()} />
+    ));
 
     const renderAdminControls = () => {
       if (this.state.role === Role.Admin) {
-        return <ToolbarGroup>
-          <FlatButton label="New" style={styles.button} containerElement={<a href="/" target="_blank" />} />
-          <FlatButton label="Save" style={styles.button} onClick={this.onSave} />
-          <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
-          <DropDownMenu
-            value={this.state.selectedLanguage}
-            labelStyle={styles.button}
-            onChange={this.onSelectLanguage}
-          >
-            {languageItems}
-          </DropDownMenu>
-        </ToolbarGroup>;
+        return (
+          <ToolbarGroup>
+            <FlatButton label="New" style={styles.button} containerElement={<a href="/" target="_blank" />} />
+            <FlatButton label="Save" style={styles.button} onClick={this.onSave} />
+            <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
+            <DropDownMenu
+              value={this.state.selectedLanguage}
+              labelStyle={styles.button}
+              onChange={this.onSelectLanguage}
+            >
+              {languageItems}
+            </DropDownMenu>
+          </ToolbarGroup>
+        );
       } else {
         return '';
       }
@@ -295,7 +296,7 @@ export default class App extends React.Component<any, any> {
           <div className="App-editor">
             <MonacoEditor
               options={options}
-              language={this.state.languages[this.state.selectedLanguage]}
+              language={this.state.selectedLanguage}
               editorDidMount={this.editorDidMount}
               onChange={this.onEditorChange}
             />
