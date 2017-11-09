@@ -34,13 +34,25 @@ enum Role {
   Admin = 'admin',
 }
 
+interface AppState {
+  languages: string[];
+  selectedLanguage: string;
+  isShareDialogOpen: boolean;
+  isSaveDialogOpen: boolean;
+  boardId: string;
+  role: Role;
+}
+
+interface AppProps {
+}
+
 interface BoardConfig {
   role: Role;
   language: string;
   content: string;
 }
 
-export default class App extends React.Component<any, any> {
+export default class App extends React.Component<AppProps, AppState> {
 
   private editor: monaco.editor.ICodeEditor;
   private muiTheme: MuiTheme;
@@ -63,7 +75,7 @@ export default class App extends React.Component<any, any> {
     return decodeURIComponent(window.atob(str));
   }
 
-  constructor(props: any) {
+  constructor(props: AppProps) {
     super(props);
 
     this.onCopyToClipboard = this.onCopyToClipboard.bind(this);
@@ -127,7 +139,6 @@ export default class App extends React.Component<any, any> {
     // Parse URL <host>/board/<boardId>/<boardConfigurationBase64>
     const loc = this.history.location;
     const pathArray = loc.pathname.split('/');
-    console.log('pathArray ' + JSON.stringify(pathArray));
     let boardId = '';
     let boardContent = '';
     let role = Role.Admin;
@@ -142,7 +153,6 @@ export default class App extends React.Component<any, any> {
         const encodedHashValue = pathArray[3];
         try {
           const boardConfig = JSON.parse(App.atou(encodedHashValue));
-          console.log(boardConfig);
           boardContent = boardConfig.content;
           role = boardConfig.role;
           language = boardConfig.language;
@@ -160,7 +170,6 @@ export default class App extends React.Component<any, any> {
     const languages = monaco.languages
       .getLanguages()
       .map(function (lang: monaco.languages.ILanguageExtensionPoint) { return lang.id; });
-    // languages.sort();
 
     const path = App.encodeUrlPath(
       boardId,
@@ -204,7 +213,7 @@ export default class App extends React.Component<any, any> {
           content: this.editor.getValue()
         }
       );
-      return window.location.host + path;
+      return `${window.location.protocol}//${window.location.host}${path}`;
     } else {
       return '';
     }
@@ -222,7 +231,7 @@ export default class App extends React.Component<any, any> {
     this.setState({ isSaveDialogOpen: false });
   }
 
-  onEditorChange(event: any) {
+  onEditorChange() {
     clearTimeout(this.hashUpdateTimer);
     this.hashUpdateTimer = window.setTimeout(
       this.refreshBoardConfigInUrl,
