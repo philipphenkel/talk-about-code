@@ -62,7 +62,7 @@ export default class App extends React.Component<AppProps, AppState> {
   private history: History;
 
   static encodeUrlPath(boardId: string, boardConfig: BoardConfig) {
-    return '/board/' + boardId + '/' + this.utoa(JSON.stringify(boardConfig));
+    return '/board/' + boardId + '/' + App.utoa(JSON.stringify(boardConfig));
   }
 
   // ucs-2 string to base64 encoded ascii

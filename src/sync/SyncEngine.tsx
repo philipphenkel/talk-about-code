@@ -1,27 +1,39 @@
 import { uuidv4 } from './utils';
 
-function changeToEdit(change: any): monaco.editor.IIdentifiedSingleEditOperation {
+function changeToEdit(
+    change: monaco.editor.IModelContentChangedEvent2
+): monaco.editor.IIdentifiedSingleEditOperation {
+    const range = new monaco.Range(
+        change.range.startLineNumber,
+        change.range.startColumn,
+        change.range.endLineNumber,
+        change.range.endColumn
+    );
+
     return {
         identifier: { major: 1, minor: 0 },
-        range: change.range,
+        range: range,
         text: change.text,
         forceMoveMarkers: false
     };
 }
 
-function changesToEdits(changes: any[]): monaco.editor.IIdentifiedSingleEditOperation[] {
+function changesToEdits(
+    changes: monaco.editor.IModelContentChangedEvent2[]
+): monaco.editor.IIdentifiedSingleEditOperation[] {
     return changes.map(changeToEdit);
 }
 
-interface EditMessage {
+interface Message {
     clientId: string;
     type: string;
+}
+
+interface EditMessage extends Message {
     edits: monaco.editor.IIdentifiedSingleEditOperation[];
 }
 
-interface SyncMessage {
-    clientId: string;
-    type: string;
+interface SyncMessage extends Message {
     clientActivity: number;
     content: string;
 }
@@ -64,16 +76,16 @@ class SyncEngine {
         this.publishSyncAndScheduleNext();
     }
 
-    handleIncomingMessage(message: any): void {
+    handleIncomingMessage(message: Message): void {
         if (message.clientId === this.clientId) {
             return;
         }
 
         if (message.type === 'edit') {
-            this.handleIncomingEditMessage(message);
+            this.handleIncomingEditMessage(message as EditMessage);
         } else {
             if (message.type === 'sync') {
-                this.handleIncomingSyncMessage(message);
+                this.handleIncomingSyncMessage(message as SyncMessage);
             }
         }
     }
@@ -118,11 +130,12 @@ class SyncEngine {
         this.postponeSync();
     }
 
-    handleContentChange(event: any) {
+    handleContentChange(event: monaco.editor.IModelContentChangedEvent2) {
         this.clientActivity += 1;
         this.postponeSync();
         if (!this.isRemoteChangeInProgress) {
-            this.publishEdits(changesToEdits(event.changes));
+            const e = event as any; // IModelContentChangedEvent2 type definition is not up-to-date 
+            this.publishEdits(changesToEdits(e.changes));
         }
     }
 
