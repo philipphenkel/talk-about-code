@@ -78,14 +78,15 @@ export default class App extends React.Component<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
 
-    this.onCopyToClipboard = this.onCopyToClipboard.bind(this);
-    this.onCloseShareDialog = this.onCloseShareDialog.bind(this);
-    this.onCloseSaveDialog = this.onCloseSaveDialog.bind(this);
+    this.onResize = this.onResize.bind(this);
     this.onSelectLanguage = this.onSelectLanguage.bind(this);
     this.editorDidMount = this.editorDidMount.bind(this);
-    this.onSave = this.onSave.bind(this);
-    this.onEditorChange = this.onEditorChange.bind(this);
     this.refreshBoardConfigInUrl = this.refreshBoardConfigInUrl.bind(this);
+    this.onCopyToClipboard = this.onCopyToClipboard.bind(this);
+    this.onSave = this.onSave.bind(this);
+    this.onCloseShareDialog = this.onCloseShareDialog.bind(this);
+    this.onCloseSaveDialog = this.onCloseSaveDialog.bind(this);
+    this.onEditorChange = this.onEditorChange.bind(this);
 
     this.state = {
       languages: ['javascript'],
@@ -107,6 +108,17 @@ export default class App extends React.Component<AppProps, AppState> {
     });
   }
 
+  componentDidMount() {
+    window.addEventListener('resize', this.onResize);
+    this.clipBoard = new Clipboard('.shareBoardButton', { text: this.onCopyToClipboard });
+    this.history = createBrowserHistory();
+  }
+
+  componentWillUnmount() {
+    this.clipBoard.destroy();
+    window.removeEventListener('resize', this.onResize);
+  }
+
   onResize() {
     if (this.editor) {
       this.editor.layout();
@@ -115,17 +127,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
   onSelectLanguage(event: TouchTapEvent, index: number, value: string) {
     this.setState({ selectedLanguage: value });
-  }
-
-  componentDidMount() {
-    window.addEventListener('resize', this.onResize.bind(this));
-    this.clipBoard = new Clipboard('.shareBoardButton', { text: this.onCopyToClipboard });
-    this.history = createBrowserHistory();
-  }
-
-  componentWillUnmount() {
-    this.clipBoard.destroy();
-    window.removeEventListener('resize', this.onResize.bind(this));
   }
 
   editorDidMount(editor: monaco.editor.ICodeEditor) {
