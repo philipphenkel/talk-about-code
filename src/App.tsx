@@ -12,8 +12,8 @@ import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
 import ShareDialog from './components/ShareDialog';
 import SaveDialog from './components/SaveDialog';
-import SyncEngine from './sync/SyncEngine';
-import { uuidv4 } from './sync/utils';
+import SyncEngine from './SyncEngine';
+import { Utils } from './Utils';
 import * as Clipboard from 'clipboard';
 import { History } from 'history';
 import createBrowserHistory from 'history/createBrowserHistory';
@@ -63,17 +63,7 @@ export default class App extends React.Component<AppProps, AppState> {
   private history: History;
 
   static encodeUrlPath(boardId: string, boardConfig: BoardConfig) {
-    return '/board/' + boardId + '/' + App.utoa(JSON.stringify(boardConfig));
-  }
-
-  // ucs-2 string to base64 encoded ascii
-  static utoa(str: string) {
-    return window.btoa(encodeURIComponent(str));
-  }
-
-  // base64 encoded ascii to ucs-2 string
-  static atou(str: string) {
-    return decodeURIComponent(window.atob(str));
+    return '/board/' + boardId + '/' + Utils.utoa(JSON.stringify(boardConfig));
   }
 
   constructor(props: AppProps) {
@@ -154,7 +144,7 @@ export default class App extends React.Component<AppProps, AppState> {
       if (pathArray.length >= 4) {
         const encodedHashValue = pathArray[3];
         try {
-          const boardConfig = JSON.parse(App.atou(encodedHashValue));
+          const boardConfig = JSON.parse(Utils.atou(encodedHashValue));
           boardContent = boardConfig.content;
           role = boardConfig.role;
           language = boardConfig.language;
@@ -164,7 +154,7 @@ export default class App extends React.Component<AppProps, AppState> {
       }
     } else {
       // Create new board
-      boardId = uuidv4();
+      boardId = Utils.uuidv4();
     }
 
     this.syncEngine = new SyncEngine(editor, fayeClient, boardId, boardContent);

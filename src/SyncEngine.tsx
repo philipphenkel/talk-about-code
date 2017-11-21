@@ -1,4 +1,4 @@
-import { uuidv4 } from './utils';
+import { Utils } from './Utils';
 
 function changeToEdit(
     change: monaco.editor.IModelContentChangedEvent2
@@ -68,7 +68,7 @@ class SyncEngine {
         }
         this.channel = '/' + boardId;
         this.isRemoteChangeInProgress = false;
-        this.clientId = uuidv4();
+        this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
         this.pubSubClient.subscribe(this.channel, this.handleIncomingMessage.bind(this));
         this.model.onDidChangeContent(this.handleContentChange.bind(this));
