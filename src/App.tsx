@@ -290,7 +290,7 @@ export default class App extends React.Component<AppProps, AppState> {
           <SaveDialog open={this.state.isSaveDialogOpen} onClose={this.onCloseSaveDialog} />
           <Toolbar>
             <ToolbarGroup>
-              <ToolbarTitle text="Talk About Code" style={styles.title} />
+              <ToolbarTitle text={Config.APP_TITLE} style={styles.title} />
             </ToolbarGroup>
             {renderAdminControls()}
           </Toolbar>
