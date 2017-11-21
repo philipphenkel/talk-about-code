@@ -17,9 +17,10 @@ import { uuidv4 } from './sync/utils';
 import * as Clipboard from 'clipboard';
 import { History } from 'history';
 import createBrowserHistory from 'history/createBrowserHistory';
+import { Config } from './Config';
 
 const faye = require('faye');
-const fayeClient = new faye.Client('https://faye.brickcoder.com/bayeux');
+const fayeClient = new faye.Client(Config.FAYE_URL);
 
 fayeClient.on('transport:up', () => {
   console.log('transport:up');
