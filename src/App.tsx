@@ -12,6 +12,7 @@ import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
 import ShareDialog from './components/ShareDialog';
 import SaveDialog from './components/SaveDialog';
+import ConnectionStatus from './components/ConnectionStatus';
 import SyncEngine from './SyncEngine';
 import { Utils } from './Utils';
 import * as Clipboard from 'clipboard';
@@ -21,14 +22,6 @@ import { Config } from './Config';
 
 const faye = require('faye');
 const fayeClient = new faye.Client(Config.FAYE_URL);
-
-fayeClient.on('transport:up', () => {
-  console.log('transport:up');
-});
-
-fayeClient.on('transport:down', () => {
-  console.log('transport:down');
-});
 
 enum Role {
   User = 'user',
@@ -292,7 +285,10 @@ export default class App extends React.Component<AppProps, AppState> {
             <ToolbarGroup>
               <ToolbarTitle text={Config.APP_TITLE} style={styles.title} />
             </ToolbarGroup>
-            {renderAdminControls()}
+            {renderAdminControls()}            
+            <ToolbarGroup>
+              <ConnectionStatus pubSubClient={fayeClient} />
+            </ToolbarGroup>
           </Toolbar>
           <div className="App-editor">
             <MonacoEditor
