@@ -64,6 +64,7 @@ class SyncEngine {
             this.model.setValue(boardContent);
             this.clientActivity = 1;
         } else {
+            this.model.setValue('\n'.repeat(14));
             this.clientActivity = 0;
         }
         this.channel = '/' + boardId;

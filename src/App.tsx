@@ -127,7 +127,7 @@ export default class App extends React.Component<AppProps, AppState> {
     const loc = this.history.location;
     const pathArray = loc.pathname.split('/');
     let boardId = '';
-    let boardContent = '\n'.repeat(14);
+    let boardContent = '';
     let role = Role.Admin;
     let language = editor.getModel().getModeId();
 
