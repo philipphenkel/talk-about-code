@@ -35,6 +35,7 @@ interface AppState {
   isSaveDialogOpen: boolean;
   boardId: string;
   role: Role;
+  clientId: string;
 }
 
 interface AppProps {
@@ -79,6 +80,7 @@ export default class App extends React.Component<AppProps, AppState> {
       isSaveDialogOpen: false,
       boardId: '',
       role: Role.User,
+      clientId: Utils.uuidv4(),
     };
 
     this.muiTheme = getMuiTheme({
@@ -285,10 +287,11 @@ export default class App extends React.Component<AppProps, AppState> {
             <ToolbarGroup>
               <ToolbarTitle text={Config.APP_TITLE} style={styles.title} />
             </ToolbarGroup>
-            {renderAdminControls()}            
+                     
             <ToolbarGroup>
-              <ConnectionStatus pubSubClient={fayeClient} />
+              <ConnectionStatus clientId={this.state.clientId} pubSubClient={fayeClient} />
             </ToolbarGroup>
+            {renderAdminControls()}   
           </Toolbar>
           <div className="App-editor">
             <MonacoEditor

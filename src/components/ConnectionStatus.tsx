@@ -2,17 +2,17 @@ import * as React from 'react';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 import { white, red400 } from 'material-ui/styles/colors';
-import { Utils } from '../Utils';
+import CircularProgress from 'material-ui/CircularProgress';
 
 interface ConnectionStatusProps {
     pubSubClient: any;
+    clientId: string;
 }
 
 interface ConnectionStatusState {
     hasConnectionFeedback: boolean;
     isConnected: boolean;
     userCount: number;
-    userId: string;
 }
 
 export default class ConnectionStatus extends React.Component<ConnectionStatusProps, ConnectionStatusState> {
@@ -24,7 +24,6 @@ export default class ConnectionStatus extends React.Component<ConnectionStatusPr
             hasConnectionFeedback: false,
             isConnected: false,
             userCount: 1,
-            userId: Utils.uuidv4(),
         };
 
         props.pubSubClient.on('transport:up', () => {
@@ -37,23 +36,20 @@ export default class ConnectionStatus extends React.Component<ConnectionStatusPr
     }
 
     public render() {
+        let symbol = <CircularProgress size={20} color={white} thickness={3}/>;
         let tooltip = 'Connecting to sync server';
-        let icon = 'sync';
-        let color = white;
-
+        
         if (this.state.hasConnectionFeedback) {
             if (this.state.isConnected) {
                 if (this.state.userCount <= 1) {
-                    icon = 'person';
-                    tooltip = 'You are the only user of this board';
+                    tooltip = 'Waiting for other users';
                 } else {
-                    icon = 'people';
+                    symbol = <FontIcon className="material-icons" color={white}>people</FontIcon>;
                     tooltip = `${this.state.userCount} users on this board`;
                 }
             } else {
-                icon = 'sync_problem';
+                symbol = <FontIcon className="material-icons" color={red400}>error</FontIcon>;
                 tooltip = 'Not connected to sync server';
-                color = red400;
             }
         }
 
@@ -62,14 +58,9 @@ export default class ConnectionStatus extends React.Component<ConnectionStatusPr
                 <IconButton
                     disableTouchRipple={true}
                     tooltip={tooltip}
-                    tooltipPosition="bottom-left"
+                    tooltipPosition="bottom-center"
                 >
-                    <FontIcon
-                        className="material-icons"
-                        color={color}
-                    >
-                        {icon}
-                    </FontIcon>
+                   {symbol}
                 </IconButton>
             </div>
         );
