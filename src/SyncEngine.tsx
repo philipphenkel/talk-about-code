@@ -46,10 +46,14 @@ class SyncEngine {
     private pubSubClient: any;
 
     private channel: string;
+    private heartbeatChannel: string;
     private clientId: string;
     private clientActivity: number;
     private isRemoteChangeInProgress: boolean;
     private syncTimer: number;
+    private heartbeatTimer: number;
+
+    public static readonly HEARTBEAT_DURATION: number = 5000;
 
     constructor(
         editor: monaco.editor.ICodeEditor,
@@ -67,7 +71,8 @@ class SyncEngine {
             this.model.setValue('\n'.repeat(14));
             this.clientActivity = 0;
         }
-        this.channel = '/' + boardId;
+        this.channel = `/${boardId}/content`;
+        this.heartbeatChannel = `/${boardId}/heartbeat`; 
         this.isRemoteChangeInProgress = false;
         this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
@@ -75,9 +80,13 @@ class SyncEngine {
         this.model.onDidChangeContent(this.handleContentChange.bind(this));
         this.publishSyncAndScheduleNext = this.publishSyncAndScheduleNext.bind(this);
         this.publishSyncAndScheduleNext();
+
+        // Send heartbeat
+        this.pubSubClient.publish(this.heartbeatChannel, {clientId: this.clientId});
+        this.sendHeartbeat();
     }
 
-    handleIncomingMessage(message: Message): void {
+    private handleIncomingMessage(message: Message): void {
         if (message.clientId === this.clientId) {
             return;
         }
@@ -91,7 +100,7 @@ class SyncEngine {
         }
     }
 
-    handleIncomingEditMessage(message: EditMessage) {
+    private handleIncomingEditMessage(message: EditMessage) {
         this.isRemoteChangeInProgress = true;
 
         // Do not modify the undo stack on incoming edits. The user is only expecting to undo his edits.
@@ -109,7 +118,7 @@ class SyncEngine {
         this.isRemoteChangeInProgress = false;
     }
 
-    handleIncomingSyncMessage(message: SyncMessage) {
+    private handleIncomingSyncMessage(message: SyncMessage) {
         const ourContent = this.model.getValue();
         if (message.content !== ourContent) {
             if (this.clientActivity <= message.clientActivity) {
@@ -131,7 +140,7 @@ class SyncEngine {
         this.postponeSync();
     }
 
-    handleContentChange(event: monaco.editor.IModelContentChangedEvent2) {
+    private handleContentChange(event: monaco.editor.IModelContentChangedEvent2) {
         this.clientActivity += 1;
         this.postponeSync();
         if (!this.isRemoteChangeInProgress) {
@@ -140,11 +149,11 @@ class SyncEngine {
         }
     }
 
-    publishEdits(edits: monaco.editor.IIdentifiedSingleEditOperation[]) {
+    private publishEdits(edits: monaco.editor.IIdentifiedSingleEditOperation[]) {
         this.pubSubClient.publish(this.channel, this.createEditMessage(edits));
     }
 
-    createEditMessage(edits: monaco.editor.IIdentifiedSingleEditOperation[]): EditMessage {
+    private createEditMessage(edits: monaco.editor.IIdentifiedSingleEditOperation[]): EditMessage {
         return {
             clientId: this.clientId,
             type: 'edit',
@@ -152,19 +161,31 @@ class SyncEngine {
         };
     }
 
-    postponeSync() {
+    // TODO this should be a separate class / function
+    private sendHeartbeat() {
+        clearTimeout(this.heartbeatTimer);
+        this.heartbeatTimer = window.setTimeout(
+            () => {
+                this.pubSubClient.publish(this.heartbeatChannel, {clientId: this.clientId});
+                this.sendHeartbeat();
+            },
+            SyncEngine.HEARTBEAT_DURATION
+        );
+    }
+
+    private postponeSync() {
         clearTimeout(this.syncTimer);
         this.syncTimer = window.setTimeout(
             this.publishSyncAndScheduleNext,
             SyncEngine.SYNC_TIMEOUT + Math.random() * 1000);
     }
 
-    publishSyncAndScheduleNext() {
+    private publishSyncAndScheduleNext() {
         this.pubSubClient.publish(this.channel, this.createSyncMessage());
         this.postponeSync();
     }
 
-    createSyncMessage(): SyncMessage {
+    private createSyncMessage(): SyncMessage {
         return {
             clientId: this.clientId,
             type: 'sync',

@@ -12,7 +12,7 @@ import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
 import ShareDialog from './components/ShareDialog';
 import SaveDialog from './components/SaveDialog';
-import ConnectionStatus from './components/ConnectionStatus';
+import BoardStatusIcon from './components/BoardStatusIcon';
 import SyncEngine from './SyncEngine';
 import { Utils } from './Utils';
 import * as Clipboard from 'clipboard';
@@ -278,6 +278,10 @@ export default class App extends React.Component<AppProps, AppState> {
       }
     };
 
+    const spacerStyle = {
+      paddingRight: 30,
+    };
+
     return (
       <MuiThemeProvider muiTheme={this.muiTheme}>
         <div className="App">
@@ -286,10 +290,8 @@ export default class App extends React.Component<AppProps, AppState> {
           <Toolbar>
             <ToolbarGroup>
               <ToolbarTitle text={Config.APP_TITLE} style={styles.title} />
-            </ToolbarGroup>
-                     
-            <ToolbarGroup>
-              <ConnectionStatus clientId={this.state.clientId} pubSubClient={fayeClient} />
+              <div style={spacerStyle}/>
+              <BoardStatusIcon boardId={this.state.boardId} pubSubClient={fayeClient} />
             </ToolbarGroup>
             {renderAdminControls()}   
           </Toolbar>
