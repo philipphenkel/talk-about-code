@@ -45,11 +45,17 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
         props.pubSubClient.on('transport:down', () => {
             this.setState({ hasConnectionFeedback: true, isConnected: false });
         });
+    }
 
-        this.heartbeatSubscription = props.pubSubClient.subscribe(
-            `/${props.boardId}/heartbeat`,
+    public componentDidMount() {
+        this.heartbeatSubscription = this.props.pubSubClient.subscribe(
+            `/${this.props.boardId}/heartbeat`,
             this.handleHeartbeat.bind(this)
         );
+    }
+
+    public componentWillUnmount() {
+        this.heartbeatSubscription.cancel();
     }
 
     public componentWillReceiveProps(nextProps: BoardStatusIconProps) {
@@ -102,7 +108,7 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
                     && heartbeat.timestamp + maxAge > timestamp;
             });
 
-        heartbeats.push( { clientId: message.clientId, timestamp: timestamp } as Heartbeat);
+        heartbeats.push({ clientId: message.clientId, timestamp: timestamp } as Heartbeat);
 
         this.setState({
             hasConnectionFeedback: true,
