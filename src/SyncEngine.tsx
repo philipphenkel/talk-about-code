@@ -39,6 +39,8 @@ interface SyncMessage extends Message {
 }
 
 class SyncEngine {
+    public static readonly HEARTBEAT_DURATION: number = 5000;
+
     private static readonly SYNC_TIMEOUT: number = 5000;
 
     private editor: monaco.editor.ICodeEditor;
@@ -52,8 +54,6 @@ class SyncEngine {
     private isRemoteChangeInProgress: boolean;
     private syncTimer: number;
     private heartbeatTimer: number;
-
-    public static readonly HEARTBEAT_DURATION: number = 5000;
 
     constructor(
         editor: monaco.editor.ICodeEditor,
@@ -72,7 +72,7 @@ class SyncEngine {
             this.clientActivity = 0;
         }
         this.channel = `/${boardId}/content`;
-        this.heartbeatChannel = `/${boardId}/heartbeat`; 
+        this.heartbeatChannel = `/${boardId}/heartbeat`;
         this.isRemoteChangeInProgress = false;
         this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
@@ -80,10 +80,7 @@ class SyncEngine {
         this.model.onDidChangeContent(this.handleContentChange.bind(this));
         this.publishSyncAndScheduleNext = this.publishSyncAndScheduleNext.bind(this);
         this.publishSyncAndScheduleNext();
-
-        // Send heartbeat
-        this.pubSubClient.publish(this.heartbeatChannel, {clientId: this.clientId});
-        this.sendHeartbeat();
+        this.sendHeartbeat(500);
     }
 
     private handleIncomingMessage(message: Message): void {
@@ -119,6 +116,11 @@ class SyncEngine {
     }
 
     private handleIncomingSyncMessage(message: SyncMessage) {
+        if (message.clientActivity <= 1) {
+            // Immediately transmit heartbeat if new client is detected
+            this.pubSubClient.publish(this.heartbeatChannel, { clientId: this.clientId });
+        }
+
         const ourContent = this.model.getValue();
         if (message.content !== ourContent) {
             if (this.clientActivity <= message.clientActivity) {
@@ -135,6 +137,7 @@ class SyncEngine {
             }
         } else {
             console.log('sync: no difference');
+            this.clientActivity = message.clientActivity;
         }
         // We just sync'ed. Let's postpone the next sync request.
         this.postponeSync();
@@ -161,15 +164,15 @@ class SyncEngine {
         };
     }
 
-    // TODO this should be a separate class / function
-    private sendHeartbeat() {
+    // TODO heartbeat transmission should be a separate class / function
+    private sendHeartbeat(delayMillis: number = 0): void {
         clearTimeout(this.heartbeatTimer);
         this.heartbeatTimer = window.setTimeout(
             () => {
-                this.pubSubClient.publish(this.heartbeatChannel, {clientId: this.clientId});
-                this.sendHeartbeat();
+                this.pubSubClient.publish(this.heartbeatChannel, { clientId: this.clientId });
+                this.sendHeartbeat(SyncEngine.HEARTBEAT_DURATION);
             },
-            SyncEngine.HEARTBEAT_DURATION
+            delayMillis
         );
     }
 
