@@ -262,7 +262,6 @@ export default class App extends React.Component<AppProps, AppState> {
         return (
           <ToolbarGroup>
             <FlatButton label="New" style={styles.button} containerElement={<a href="/" target="_blank" />} />
-            <FlatButton label="Save" style={styles.button} onClick={this.onSave} />
             <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
             <DropDownMenu
               value={this.state.selectedLanguage}
