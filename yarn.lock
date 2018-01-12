@@ -38,12 +38,12 @@
     "@types/node" "*"
     "@types/react" "*"
 
-"@types/react-monaco-editor@^0.8.2":
-  version "0.8.2"
-  resolved "https://registry.yarnpkg.com/@types/react-monaco-editor/-/react-monaco-editor-0.8.2.tgz#b73bb33ab3b9a411ae7a9c12bd044c499ab5bce8"
+"@types/react-monaco-editor@0.10.0":
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/@types/react-monaco-editor/-/react-monaco-editor-0.10.0.tgz#6af8b90ef1904b9a82180c786dc22d7d100943c5"
   dependencies:
     "@types/react" "*"
-    monaco-editor "0.8.3"
+    monaco-editor "^0.10.0"
 
 "@types/react@*", "@types/react@^16.0.10":
   version "16.0.21"
@@ -3482,10 +3482,6 @@ mkdirp@0.5.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0, mkd
   dependencies:
     minimist "0.0.8"
 
-monaco-editor@0.8.3:
-  version "0.8.3"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.8.3.tgz#523bdf2d1524db2c2dfc3cae0a7b6edc48d6dea6"
-
 monaco-editor@^0.10.0:
   version "0.10.1"
   resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.10.1.tgz#8c96c4f15b6b5258bf92cbde93cad8a7e3007e14"
@@ -4463,9 +4459,9 @@ react-event-listener@^0.5.1:
     prop-types "^15.6.0"
     warning "^3.0.0"
 
-react-monaco-editor@^0.10.1:
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/react-monaco-editor/-/react-monaco-editor-0.10.1.tgz#eb67415e4a7d907b0160ab0669f0d05631ce5615"
+react-monaco-editor@0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/react-monaco-editor/-/react-monaco-editor-0.13.0.tgz#efb4c45191119bdbbdcbd4de0ff1705b7af929ed"
   dependencies:
     monaco-editor "^0.10.0"
     prop-types "^15.5.10"

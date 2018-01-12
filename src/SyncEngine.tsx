@@ -1,7 +1,7 @@
 import { Utils } from './Utils';
 
 function changeToEdit(
-    change: monaco.editor.IModelContentChangedEvent2
+    change: monaco.editor.IModelContentChange
 ): monaco.editor.IIdentifiedSingleEditOperation {
     const range = new monaco.Range(
         change.range.startLineNumber,
@@ -19,7 +19,7 @@ function changeToEdit(
 }
 
 function changesToEdits(
-    changes: monaco.editor.IModelContentChangedEvent2[]
+    changes: monaco.editor.IModelContentChange[]
 ): monaco.editor.IIdentifiedSingleEditOperation[] {
     return changes.map(changeToEdit);
 }
@@ -143,12 +143,11 @@ class SyncEngine {
         this.postponeSync();
     }
 
-    private handleContentChange(event: monaco.editor.IModelContentChangedEvent2) {
+    private handleContentChange(event: monaco.editor.IModelContentChangedEvent) {
         this.clientActivity += 1;
         this.postponeSync();
         if (!this.isRemoteChangeInProgress) {
-            const e = event as any; // IModelContentChangedEvent2 type definition is not up-to-date 
-            this.publishEdits(changesToEdits(e.changes));
+            this.publishEdits(changesToEdits(event.changes));
         }
     }
 

@@ -239,7 +239,9 @@ export default class App extends React.Component<AppProps, AppState> {
       scrollBeyondLastLine: false,
       // renderLineHighlight: 'none',
       // lineNumbers: 'on',
-      fontFamily: 'Roboto Mono'
+      fontFamily: 'Roboto Mono',
+      // snippetSuggestions: 'none',
+
     };
 
     const styles = {
@@ -281,6 +283,13 @@ export default class App extends React.Component<AppProps, AppState> {
       paddingRight: 30,
     };
 
+    const requireConfig = {
+      url: `${Config.MONACO_EDITOR_PATH}/loader.js`,
+      paths: {
+        'vs': Config.MONACO_EDITOR_PATH
+      },
+    };
+
     return (
       <MuiThemeProvider muiTheme={this.muiTheme}>
         <div className="App">
@@ -289,10 +298,10 @@ export default class App extends React.Component<AppProps, AppState> {
           <Toolbar>
             <ToolbarGroup>
               <ToolbarTitle text={Config.APP_TITLE} style={styles.title} />
-              <div style={spacerStyle}/>
+              <div style={spacerStyle} />
               <BoardStatusIcon boardId={this.state.boardId} pubSubClient={fayeClient} />
             </ToolbarGroup>
-            {renderAdminControls()}   
+            {renderAdminControls()}
           </Toolbar>
           <div className="App-editor">
             <MonacoEditor
@@ -300,6 +309,7 @@ export default class App extends React.Component<AppProps, AppState> {
               language={this.state.selectedLanguage}
               editorDidMount={this.editorDidMount}
               onChange={this.onEditorChange}
+              requireConfig={requireConfig}
             />
           </div>
         </div>
