@@ -17,13 +17,13 @@ yarn start
 ```
 
 ## Backlog
-- [ ] Keep language selection in sync across clients
 - [ ] Disable JavaScript suggestions
 - [ ] Remote highlighting to support discussion on specific code chunks
 - [ ] About dialog with version info and link to GitHub
+- [ ] Share (blank board) and Make Snapshot (board with content)
 
 ## License
 
-Copyright (C) 2017 Philipp Henkel
+Copyright (C) 2017-2018 Philipp Henkel
 
 Licensed under the MIT License (MIT). See LICENSE file for more details.

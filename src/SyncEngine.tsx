@@ -49,6 +49,7 @@ class SyncEngine {
 
     private channel: string;
     private heartbeatChannel: string;
+    private languageChannel: string;
     private clientId: string;
     private clientActivity: number;
     private isRemoteChangeInProgress: boolean;
@@ -73,6 +74,7 @@ class SyncEngine {
         }
         this.channel = `/${boardId}/content`;
         this.heartbeatChannel = `/${boardId}/heartbeat`;
+        this.languageChannel = `/${boardId}/language`;
         this.isRemoteChangeInProgress = false;
         this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
@@ -184,6 +186,7 @@ class SyncEngine {
 
     private publishSyncAndScheduleNext() {
         this.pubSubClient.publish(this.channel, this.createSyncMessage());
+        this.pubSubClient.publish(this.languageChannel, this.model.getModeId())
         this.postponeSync();
     }
 

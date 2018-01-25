@@ -72,10 +72,11 @@ export default class App extends React.Component<AppProps, AppState> {
     this.onCloseShareDialog = this.onCloseShareDialog.bind(this);
     this.onCloseSaveDialog = this.onCloseSaveDialog.bind(this);
     this.onEditorChange = this.onEditorChange.bind(this);
+    this.handleLanguageUpdate = this.handleLanguageUpdate.bind(this);
 
     this.state = {
-      languages: ['javascript'],
-      selectedLanguage: 'javascript',
+      languages: [Config.DEFAULT_LANGUAGE],
+      selectedLanguage: Config.DEFAULT_LANGUAGE,
       isShareDialogOpen: false,
       isSaveDialogOpen: false,
       boardId: '',
@@ -111,8 +112,12 @@ export default class App extends React.Component<AppProps, AppState> {
     }
   }
 
-  onSelectLanguage(event: TouchTapEvent, index: number, value: string) {
-    this.setState({ selectedLanguage: value });
+  onSelectLanguage(event: TouchTapEvent, index: number, value: string) {;
+    fayeClient.publish(`/${this.state.boardId}/language`, value);
+  }
+
+  handleLanguageUpdate(language : string) {
+    this.setState({ selectedLanguage: language });
   }
 
   editorDidMount(editor: monaco.editor.ICodeEditor) {
@@ -129,11 +134,12 @@ export default class App extends React.Component<AppProps, AppState> {
     let boardId = '';
     let boardContent = '';
     let role = Role.Admin;
-    let language = editor.getModel().getModeId();
+    let language = Config.DEFAULT_LANGUAGE;
 
     if (pathArray.length >= 3 && pathArray[1] === 'board' && pathArray[2]) {
-      // Connect to existing board
+      // Connect to existing board as user
       boardId = pathArray[2];
+      role = Role.User;
 
       // Apply board config
       if (pathArray.length >= 4) {
@@ -144,7 +150,7 @@ export default class App extends React.Component<AppProps, AppState> {
           role = boardConfig.role;
           language = boardConfig.language;
         } catch (err) {
-          // ignore decoding errors, start as admin and sync content from others
+          // ignore decoding errors and sync content from others
         }
       }
     } else {
@@ -153,6 +159,8 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     this.syncEngine = new SyncEngine(editor, fayeClient, boardId, boardContent);
+
+    fayeClient.subscribe(`/${boardId}/language`, this.handleLanguageUpdate);
 
     const languages = monaco.languages
       .getLanguages()
