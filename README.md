@@ -20,7 +20,7 @@ yarn start
 - [ ] Disable JavaScript suggestions
 - [ ] Remote highlighting to support discussion on specific code chunks
 - [ ] About dialog with version info and link to GitHub
-- [ ] Share (blank board) and Make Snapshot (board with content)
+- [ ] Shorten URL by using compression
 
 ## License
 

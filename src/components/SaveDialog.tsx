@@ -21,19 +21,23 @@ export default class SaveDialog extends React.Component<SaveDialogProps, {}> {
 
         return (
             <Dialog
-                title="BOOKMARK YOUR PAGE"
+                title="ADMIN LINK COPIED TO CLIPBOARD"
                 actions={actions}
                 modal={false}
                 open={this.props.open}
                 onRequestClose={this.props.onClose}
             >
                 <p>
-                    The board's content is stored as part of its web address.
-                    We are continously encoding the content and updating the 
-                    location bar after a short period of inactivity.
+                    The link to both this board and its current content has been copied to the clipboard.
+                </p>
+                <p>
+                    We store the board's content as part of its web address.
+                    After a short period of inactivity, we are encoding the content and updating the 
+                    location bar.
                     We do not persist your code conversations on our servers.
                 </p>
-                Please bookmark your board to save it.
+
+                Please save the admin link if you would like to restore this board later.
             </Dialog>
         );
     }

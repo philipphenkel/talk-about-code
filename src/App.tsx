@@ -53,12 +53,8 @@ export default class App extends React.Component<AppProps, AppState> {
   private muiTheme: MuiTheme;
   private syncEngine: SyncEngine;
   private clipBoard: Clipboard;
-  private hashUpdateTimer: number;
+  private pathUpdateTimer: number;
   private history: History;
-
-  static encodeUrlPath(boardId: string, boardConfig: BoardConfig) {
-    return '/board/' + boardId + '/' + Utils.utoa(JSON.stringify(boardConfig));
-  }
 
   constructor(props: AppProps) {
     super(props);
@@ -66,8 +62,9 @@ export default class App extends React.Component<AppProps, AppState> {
     this.onResize = this.onResize.bind(this);
     this.onSelectLanguage = this.onSelectLanguage.bind(this);
     this.editorDidMount = this.editorDidMount.bind(this);
-    this.refreshBoardConfigInUrl = this.refreshBoardConfigInUrl.bind(this);
-    this.onCopyToClipboard = this.onCopyToClipboard.bind(this);
+    this.refreshAdminPath = this.refreshAdminPath.bind(this);
+    this.copyAdminLinkToClipboard = this.copyAdminLinkToClipboard.bind(this);
+    this.copyUserLinkToClipboard = this.copyUserLinkToClipboard.bind(this);
     this.onSave = this.onSave.bind(this);
     this.onCloseShareDialog = this.onCloseShareDialog.bind(this);
     this.onCloseSaveDialog = this.onCloseSaveDialog.bind(this);
@@ -97,7 +94,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
   componentDidMount() {
     window.addEventListener('resize', this.onResize);
-    this.clipBoard = new Clipboard('.shareBoardButton', { text: this.onCopyToClipboard });
+    this.clipBoard = new Clipboard('.shareButton', { text: this.copyUserLinkToClipboard });
+    this.clipBoard = new Clipboard('.snapshotButton', { text: this.copyAdminLinkToClipboard });
     this.history = createBrowserHistory();
   }
 
@@ -106,17 +104,24 @@ export default class App extends React.Component<AppProps, AppState> {
     window.removeEventListener('resize', this.onResize);
   }
 
+  componentDidUpdate(prevProps : AppProps, prevState : AppState) {
+    if (this.state.role === Role.Admin) {
+      this.refreshAdminPath();
+    }
+  }
+
   onResize() {
     if (this.editor) {
       this.editor.layout();
     }
   }
 
-  onSelectLanguage(event: TouchTapEvent, index: number, value: string) {;
+  onSelectLanguage(event: TouchTapEvent, index: number, value: string) {
+    ;
     fayeClient.publish(`/${this.state.boardId}/language`, value);
   }
 
-  handleLanguageUpdate(language : string) {
+  handleLanguageUpdate(language: string) {
     this.setState({ selectedLanguage: language });
   }
 
@@ -155,6 +160,7 @@ export default class App extends React.Component<AppProps, AppState> {
       }
     } else {
       // Create new board
+      role = Role.Admin;
       boardId = Utils.uuidv4();
     }
 
@@ -166,16 +172,6 @@ export default class App extends React.Component<AppProps, AppState> {
       .getLanguages()
       .map(function (lang: monaco.languages.ILanguageExtensionPoint) { return lang.id; });
 
-    const path = App.encodeUrlPath(
-      boardId,
-      {
-        role: role,
-        language: language,
-        content: boardContent
-      }
-    );
-    this.history.replace(path);
-
     this.setState({
       selectedLanguage: language,
       languages: languages,
@@ -184,34 +180,37 @@ export default class App extends React.Component<AppProps, AppState> {
     });
   }
 
-  refreshBoardConfigInUrl() {
-    const path = App.encodeUrlPath(
-      this.state.boardId,
-      {
-        role: this.state.role,
-        language: this.editor.getModel().getModeId(),
-        content: this.editor.getValue()
-      }
-    );
+  getAdminPath() {
+    const boardConfig : BoardConfig = {
+      role: Role.Admin,
+      language: this.editor.getModel().getModeId(),
+      content: this.editor.getValue()
+    }
+
+    const configJSON = JSON.stringify(boardConfig);
+    
+    return `/board/${this.state.boardId}/${Utils.utoa(configJSON)}`;
+  }
+
+  refreshAdminPath() {
+    const path = this.getAdminPath();
     this.history.replace(path);
   }
 
-  onCopyToClipboard(elem: Element): string {
-    this.setState({ isShareDialogOpen: true });
+  copyAdminLinkToClipboard(elem: Element): string {
+    this.setState({ isSaveDialogOpen: true });
 
     if (this.editor) {
-      const path = App.encodeUrlPath(
-        this.state.boardId,
-        {
-          role: Role.User,
-          language: this.editor.getModel().getModeId(),
-          content: this.editor.getValue()
-        }
-      );
+      const path = this.getAdminPath();
       return `${window.location.protocol}//${window.location.host}${path}`;
     } else {
       return '';
     }
+  }
+
+  copyUserLinkToClipboard(elem: Element): string {
+    this.setState({ isShareDialogOpen: true });
+    return `${window.location.protocol}//${window.location.host}/board/${this.state.boardId}`;
   }
 
   onSave() {
@@ -227,10 +226,12 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   onEditorChange() {
-    clearTimeout(this.hashUpdateTimer);
-    this.hashUpdateTimer = window.setTimeout(
-      this.refreshBoardConfigInUrl,
-      2000);
+    if (this.state.role === Role.Admin) {
+      clearTimeout(this.pathUpdateTimer);
+      this.pathUpdateTimer = window.setTimeout(
+        this.refreshAdminPath,
+        5000);
+    }
   }
 
   render() {
@@ -272,7 +273,8 @@ export default class App extends React.Component<AppProps, AppState> {
         return (
           <ToolbarGroup>
             <FlatButton label="New" style={styles.button} containerElement={<a href="/" target="_blank" />} />
-            <FlatButton className="shareBoardButton" label="Share" style={styles.button} />
+            <FlatButton className="shareButton" label="Share" style={styles.button} />
+            <FlatButton className="snapshotButton" label="Save" style={styles.button} />
             <DropDownMenu
               value={this.state.selectedLanguage}
               labelStyle={styles.button}
