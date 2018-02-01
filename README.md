@@ -16,12 +16,6 @@ yarn install
 yarn start
 ```
 
-## Backlog
-- [ ] Disable JavaScript suggestions
-- [ ] Remote highlighting to support discussion on specific code chunks
-- [ ] About dialog with version info and link to GitHub
-- [ ] Shorten URL by using compression
-
 ## License
 
 Copyright (C) 2017-2018 Philipp Henkel
