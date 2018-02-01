@@ -119,7 +119,6 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   onSelectLanguage(event: TouchTapEvent, index: number, value: string) {
-    ;
     fayeClient.publish(`/${this.state.boardId}/language`, value);
   }
 
@@ -128,12 +127,8 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   editorDidMount(editor: monaco.editor.ICodeEditor) {
-    console.log('editorDidMount');
-
     this.editor = editor;
     this.editor.focus();
-
-    console.log('location ' + JSON.stringify(this.history.location));
 
     // Parse URL <host>/board/<boardId>/<boardConfigurationBase64>
     const loc = this.history.location;
@@ -187,7 +182,7 @@ export default class App extends React.Component<AppProps, AppState> {
       role: Role.Admin,
       language: this.editor.getModel().getModeId(),
       content: this.editor.getValue()
-    }
+    };
 
     const configJSON = JSON.stringify(boardConfig);
 

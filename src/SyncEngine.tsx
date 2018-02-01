@@ -127,18 +127,15 @@ class SyncEngine {
         if (message.content !== ourContent) {
             if (this.clientActivity <= message.clientActivity) {
                 // We received content from a more active client. Let's accept it.
-                console.log('sync: accept remote content');
                 this.isRemoteChangeInProgress = true;
                 this.model.setValue(message.content);
                 this.isRemoteChangeInProgress = false;
                 this.clientActivity = message.clientActivity;
             } else {
                 // We received out-dated content. Share our content.
-                console.log('sync: share our content');
                 this.publishSyncAndScheduleNext();
             }
         } else {
-            console.log('sync: no difference');
             this.clientActivity = message.clientActivity;
         }
         // We just sync'ed. Let's postpone the next sync request.
@@ -186,7 +183,7 @@ class SyncEngine {
 
     private publishSyncAndScheduleNext() {
         this.pubSubClient.publish(this.channel, this.createSyncMessage());
-        this.pubSubClient.publish(this.languageChannel, this.model.getModeId())
+        this.pubSubClient.publish(this.languageChannel, this.model.getModeId());
         this.postponeSync();
     }
 

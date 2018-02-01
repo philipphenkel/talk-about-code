@@ -38,7 +38,7 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
             heartbeats: [],
         };
 
-        this.handleHeartbeat = this.handleHeartbeat.bind(this)
+        this.handleHeartbeat = this.handleHeartbeat.bind(this);
 
         props.pubSubClient.on('transport:up', () => {
             this.setState({ hasConnectionFeedback: true, isConnected: true });
@@ -70,7 +70,7 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
     }
 
     public render() {
-        let symbol = <CircularProgress size={20} color={white} thickness={3} />;
+        let symbol = <CircularProgress size={20} color='rgba(255, 255, 255, 0.7)' thickness={3} />;
         let tooltip = 'Connecting to server';
 
         if (this.state.hasConnectionFeedback) {
@@ -78,7 +78,7 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
                 if (this.state.heartbeats.length <= 1) {
                     tooltip = 'Waiting for other users to join this board';
                 } else {
-                    symbol = <FontIcon className="material-icons" color={white}>people</FontIcon>;
+                    symbol = <FontIcon className="material-icons" color={white}>account_circle</FontIcon>;
                     tooltip = `${this.state.heartbeats.length} users on this board`;
                 }
             } else {
