@@ -21,7 +21,7 @@ export default class SaveDialog extends React.Component<SaveDialogProps, {}> {
 
         return (
             <Dialog
-                title="ADMIN LINK COPIED TO CLIPBOARD"
+                title="ADMINISTRATOR LINK COPIED TO CLIPBOARD"
                 actions={actions}
                 modal={false}
                 open={this.props.open}

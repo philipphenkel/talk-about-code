@@ -6,7 +6,9 @@ import { MuiTheme } from 'material-ui/styles';
 import { TouchTapEvent } from 'material-ui';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import { blue600 } from 'material-ui/styles/colors';
-import FlatButton from 'material-ui/FlatButton';
+import FontIcon from 'material-ui/FontIcon';
+import IconButton from 'material-ui/IconButton';
+import { white } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
@@ -104,7 +106,7 @@ export default class App extends React.Component<AppProps, AppState> {
     window.removeEventListener('resize', this.onResize);
   }
 
-  componentDidUpdate(prevProps : AppProps, prevState : AppState) {
+  componentDidUpdate(prevProps: AppProps, prevState: AppState) {
     if (this.state.role === Role.Admin) {
       this.refreshAdminPath();
     }
@@ -181,14 +183,14 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   getAdminPath() {
-    const boardConfig : BoardConfig = {
+    const boardConfig: BoardConfig = {
       role: Role.Admin,
       language: this.editor.getModel().getModeId(),
       content: this.editor.getValue()
     }
 
     const configJSON = JSON.stringify(boardConfig);
-    
+
     return `/board/${this.state.boardId}/${Utils.utoa(configJSON)}`;
   }
 
@@ -272,9 +274,7 @@ export default class App extends React.Component<AppProps, AppState> {
       if (this.state.role === Role.Admin) {
         return (
           <ToolbarGroup>
-            <FlatButton label="New" style={styles.button} containerElement={<a href="/" target="_blank" />} />
-            <FlatButton className="shareButton" label="Share" style={styles.button} />
-            <FlatButton className="snapshotButton" label="Save" style={styles.button} />
+
             <DropDownMenu
               value={this.state.selectedLanguage}
               labelStyle={styles.button}
@@ -282,6 +282,16 @@ export default class App extends React.Component<AppProps, AppState> {
             >
               {languageItems}
             </DropDownMenu>
+
+            <IconButton tooltip={'Create a new board'} containerElement={<a href="/" target="_blank" />}>
+              <FontIcon className="material-icons" color={white}>add_circle_outline</FontIcon>;
+            </IconButton>
+            <IconButton tooltip={'Create attendee link'} className="shareButton">
+              <FontIcon className="material-icons" color={white}>send</FontIcon>;
+            </IconButton>
+            <IconButton tooltip={'Create administrator link'} className="snapshotButton">
+              <FontIcon className="material-icons" color={white}>link</FontIcon>;
+            </IconButton>
           </ToolbarGroup>
         );
       } else {
