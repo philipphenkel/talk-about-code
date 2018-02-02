@@ -13,7 +13,7 @@
    viewBox="0 0 16 16"
    preserveAspectRatio="xMidYMid meet"
    id="svg6"
-   sodipodi:docname="safari-pinned-tab.svg"
+   sodipodi:docname="favicon.svg"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06">
   <metadata
      id="metadata12">
@@ -48,7 +48,7 @@
      inkscape:window-x="285"
      inkscape:window-y="36"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg6" />
+     inkscape:current-layer="g4" />
   <g
      transform="matrix(0.00274426,0,0,-0.00275275,-1.6050605,17.659618)"
      id="g4"
@@ -56,6 +56,7 @@
     <path
        d="M 1033,6399 C 806,6343 638,6164 594,5930 587,5893 581,623 588,603 c 2,-6 263,248 580,565 l 577,577 2100,5 2100,5 66,22 c 186,64 327,212 387,408 13,44 15,271 17,1880 1,1499 -1,1841 -12,1888 -48,212 -195,370 -406,439 -62,21 -72,21 -2478,23 -2267,1 -2419,0 -2486,-16 z M 5250,4961 c 0,-267 -1,-289 -17,-292 -10,-3 -796,-4 -1748,-3 H 1755 l -3,292 -2,292 h 1750 1750 z m -2,-879 2,-292 H 3500 1750 v 288 c 0,159 2,291 4,293 2,2 789,4 1748,4 H 5245 Z M 4085,3220 c 0,-151 -3,-282 -6,-290 -6,-13 -144,-15 -1161,-13 -634,0 -1156,1 -1160,2 -5,1 -8,132 -8,291 v 290 l 1167,-2 1167,-3 z"
        id="path2"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       style="fill:#455a64;fill-opacity:1" />
   </g>
 </svg>

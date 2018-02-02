@@ -5,10 +5,9 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import { MuiTheme } from 'material-ui/styles';
 import { TouchTapEvent } from 'material-ui';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
-import { blue600 } from 'material-ui/styles/colors';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
-import { white } from 'material-ui/styles/colors';
+import { white, blueGrey700 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
@@ -85,11 +84,11 @@ export default class App extends React.Component<AppProps, AppState> {
 
     this.muiTheme = getMuiTheme({
       palette: {
-        primary1Color: blue600,
+        primary1Color: blueGrey700,
       },
       toolbar: {
         height: 65,
-        backgroundColor: '#26556D',
+        backgroundColor: blueGrey700,
       }
     });
   }
