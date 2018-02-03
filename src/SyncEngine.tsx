@@ -45,6 +45,7 @@ class SyncEngine {
 
     private editor: monaco.editor.ICodeEditor;
     private model: monaco.editor.IModel;
+    // tslint:disable-next-line:no-any
     private pubSubClient: any;
 
     private channel: string;
@@ -55,9 +56,12 @@ class SyncEngine {
     private isRemoteChangeInProgress: boolean;
     private syncTimer: number;
     private heartbeatTimer: number;
+    // tslint:disable-next-line:no-any
+    private contentSubscription: any;
 
     constructor(
         editor: monaco.editor.ICodeEditor,
+        // tslint:disable-next-line:no-any
         pubSubClient: any,
         boardId: string,
         boardContent: string
@@ -78,11 +82,24 @@ class SyncEngine {
         this.isRemoteChangeInProgress = false;
         this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
-        this.pubSubClient.subscribe(this.channel, this.handleIncomingMessage.bind(this));
-        this.model.onDidChangeContent(this.handleContentChange.bind(this));
+        this.handleIncomingMessage = this.handleIncomingMessage.bind(this);
+        this.handleContentChange = this.handleContentChange.bind(this);
         this.publishSyncAndScheduleNext = this.publishSyncAndScheduleNext.bind(this);
+        this.model.onDidChangeContent(this.handleContentChange);
+    }
+
+    public start(): void {
+        this.contentSubscription = this.pubSubClient.subscribe(this.channel, this.handleIncomingMessage);
         this.publishSyncAndScheduleNext();
         this.sendHeartbeat(500);
+    }
+
+    public stop(): void {
+        if (this.contentSubscription) {
+            this.contentSubscription.cancel();
+        }
+        clearTimeout(this.syncTimer);
+        clearTimeout(this.heartbeatTimer);
     }
 
     private handleIncomingMessage(message: Message): void {

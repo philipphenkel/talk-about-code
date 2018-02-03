@@ -6,6 +6,7 @@ import CircularProgress from 'material-ui/CircularProgress';
 import SyncEngine from '../SyncEngine';
 
 interface BoardStatusIconProps {
+    // tslint:disable-next-line:no-any
     pubSubClient: any;
     boardId: string;
 }
@@ -27,6 +28,7 @@ interface HeartbeatMessage {
 
 export default class BoardStatusIcon extends React.Component<BoardStatusIconProps, BoardStatusIconState> {
 
+    // tslint:disable-next-line:no-any
     private heartbeatSubscription: any;
 
     constructor(props: BoardStatusIconProps) {
@@ -70,7 +72,7 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
     }
 
     public render() {
-        let symbol = <CircularProgress size={20} color='rgba(255, 255, 255, 0.7)' thickness={3} />;
+        let symbol = <CircularProgress size={20} color="rgba(255, 255, 255, 0.7)" thickness={3} />;
         let tooltip = 'Connecting to server';
 
         if (this.state.hasConnectionFeedback) {

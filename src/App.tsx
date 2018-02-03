@@ -3,7 +3,6 @@ import './App.css';
 import MonacoEditor from 'react-monaco-editor';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import { MuiTheme } from 'material-ui/styles';
-import { TouchTapEvent } from 'material-ui';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
@@ -101,6 +100,9 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   componentWillUnmount() {
+    if (this.syncEngine) {
+      this.syncEngine.stop();
+    }
     this.clipBoard.destroy();
     window.removeEventListener('resize', this.onResize);
   }
@@ -117,7 +119,7 @@ export default class App extends React.Component<AppProps, AppState> {
     }
   }
 
-  onSelectLanguage(event: TouchTapEvent, index: number, value: string) {
+  onSelectLanguage(event: React.SyntheticEvent<{}>, index: number, value: string) {
     fayeClient.publish(`/${this.state.boardId}/language`, value);
   }
 
@@ -161,6 +163,7 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     this.syncEngine = new SyncEngine(editor, fayeClient, boardId, boardContent);
+    this.syncEngine.start();
 
     fayeClient.subscribe(`/${boardId}/language`, this.handleLanguageUpdate);
 
