@@ -247,11 +247,9 @@ export default class App extends React.Component<AppProps, AppState> {
       occurrencesHighlight: false,
       selectionHighlight: false,
       scrollBeyondLastLine: false,
-      // renderLineHighlight: 'none',
-      // lineNumbers: 'on',
       fontFamily: 'Roboto Mono',
-      // snippetSuggestions: 'none',
-
+      quickSuggestions: false,
+      parameterHints: false,
     };
 
     const styles = {
