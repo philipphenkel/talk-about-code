@@ -52,7 +52,8 @@ export default class App extends React.Component<AppProps, AppState> {
   private editor: monaco.editor.ICodeEditor;
   private muiTheme: MuiTheme;
   private syncEngine: SyncEngine;
-  private clipBoard: Clipboard;
+  private attendeeLinkClipBoard: Clipboard;
+  private adminLinkClipBoard: Clipboard;
   private pathUpdateTimer: number;
   private history: History;
 
@@ -94,8 +95,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
   componentDidMount() {
     window.addEventListener('resize', this.onResize);
-    this.clipBoard = new Clipboard('.shareButton', { text: this.copyUserLinkToClipboard });
-    this.clipBoard = new Clipboard('.snapshotButton', { text: this.copyAdminLinkToClipboard });
+    this.attendeeLinkClipBoard = new Clipboard('.shareButton', { text: this.copyUserLinkToClipboard });
+    this.adminLinkClipBoard = new Clipboard('.snapshotButton', { text: this.copyAdminLinkToClipboard });
     this.history = createBrowserHistory();
   }
 
@@ -103,7 +104,8 @@ export default class App extends React.Component<AppProps, AppState> {
     if (this.syncEngine) {
       this.syncEngine.stop();
     }
-    this.clipBoard.destroy();
+    this.adminLinkClipBoard.destroy();
+    this.attendeeLinkClipBoard.destroy();
     window.removeEventListener('resize', this.onResize);
   }
 
