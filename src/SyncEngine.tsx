@@ -117,21 +117,27 @@ class SyncEngine {
     }
 
     private handleIncomingEditMessage(message: EditMessage) {
-        this.isRemoteChangeInProgress = true;
+        try {
+            this.isRemoteChangeInProgress = true;
 
-        // Do not modify the undo stack on incoming edits. The user is only expecting to undo his edits.
-        this.model.applyEdits(message.edits);
+            // Do not modify the undo stack on incoming edits. The user is only expecting to undo his edits.
+            this.model.applyEdits(message.edits);
 
-        // Drop selection if it was modified by remote edits
-        const selection = this.editor.getSelection();
-        message.edits.forEach((edit) => {
-            if (monaco.Range.areIntersectingOrTouching(edit.range, selection)) {
-                const pos = this.editor.getPosition();
-                this.editor.setPosition(pos);
-            }
-        });
-
-        this.isRemoteChangeInProgress = false;
+            // Drop selection if it was modified by remote edits
+            const selection = this.editor.getSelection();
+            const pos = this.editor.getPosition();
+            const emptySelectionAtCurrentPosition = new monaco.Selection(
+                pos.lineNumber, pos.column, pos.lineNumber, pos.column
+            );
+            message.edits.forEach((edit) => {
+                if (monaco.Range.areIntersectingOrTouching(edit.range, selection)) {
+                    this.editor.setSelection(emptySelectionAtCurrentPosition);
+                }
+            });
+        }
+        finally {
+            this.isRemoteChangeInProgress = false;
+        }
     }
 
     private handleIncomingSyncMessage(message: SyncMessage) {
