@@ -51,6 +51,7 @@ class SyncEngine {
     private channel: string;
     private heartbeatChannel: string;
     private languageChannel: string;
+    private selectionsChannel: string;
     private clientId: string;
     private clientActivity: number;
     private isRemoteChangeInProgress: boolean;
@@ -58,6 +59,9 @@ class SyncEngine {
     private heartbeatTimer: number;
     // tslint:disable-next-line:no-any
     private contentSubscription: any;
+    // tslint:disable-next-line:no-any
+    private selectionsSubscription: any;
+    private isRemoteSelectionInProgress: boolean;
 
     constructor(
         editor: monaco.editor.ICodeEditor,
@@ -79,17 +83,24 @@ class SyncEngine {
         this.channel = `/${boardId}/content`;
         this.heartbeatChannel = `/${boardId}/heartbeat`;
         this.languageChannel = `/${boardId}/language`;
+        this.selectionsChannel = `/${boardId}/selections`;
         this.isRemoteChangeInProgress = false;
         this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
         this.handleIncomingMessage = this.handleIncomingMessage.bind(this);
-        this.handleContentChange = this.handleContentChange.bind(this);
+        this.handleIncomingSelections = this.handleIncomingSelections.bind(this);
+        this.onDidChangeContent = this.onDidChangeContent.bind(this);
+        this.onDidChangeCursorSelection = this.onDidChangeCursorSelection.bind(this);
         this.publishSyncAndScheduleNext = this.publishSyncAndScheduleNext.bind(this);
-        this.model.onDidChangeContent(this.handleContentChange);
+        this.model.onDidChangeContent(this.onDidChangeContent);
+        this.editor.onDidChangeCursorSelection(this.onDidChangeCursorSelection);
     }
 
     public start(): void {
         this.contentSubscription = this.pubSubClient.subscribe(this.channel, this.handleIncomingMessage);
+        this.selectionsSubscription = this.pubSubClient.subscribe(
+            this.selectionsChannel,
+            this.handleIncomingSelections);
         this.publishSyncAndScheduleNext();
         this.sendHeartbeat(500);
     }
@@ -98,15 +109,83 @@ class SyncEngine {
         if (this.contentSubscription) {
             this.contentSubscription.cancel();
         }
+        if (this.selectionsSubscription) {
+            this.selectionsSubscription.cancel();
+        }
         clearTimeout(this.syncTimer);
         clearTimeout(this.heartbeatTimer);
+    }
+
+    // TODO heartbeat transmission should be a separate class / function
+    private sendHeartbeat(delayMillis: number = 0): void {
+        clearTimeout(this.heartbeatTimer);
+        this.heartbeatTimer = window.setTimeout(
+            () => {
+                this.pubSubClient.publish(this.heartbeatChannel, { clientId: this.clientId });
+                this.sendHeartbeat(SyncEngine.HEARTBEAT_DURATION);
+            },
+            delayMillis
+        );
+    }
+
+    // Extract selection handling in separate class
+    private onDidChangeCursorSelection(e: monaco.editor.ICursorSelectionChangedEvent) {
+        if (!this.isRemoteSelectionInProgress) {
+            if (!e.selection.isEmpty()) {
+                this.removeRemoteSelection();
+            }
+            this.publishSelection(e);
+        }
+    }
+
+    private publishSelection(e: monaco.editor.ICursorSelectionChangedEvent) {
+        this.pubSubClient.publish(this.selectionsChannel, {
+            clientId: this.clientId,
+            selection: e.selection
+        });
+    }
+
+    private discardOwnSelection() {
+        const pos = this.editor.getPosition();
+        const emptySelectionAtPosition = new monaco.Selection(
+            pos.lineNumber, pos.column, pos.lineNumber, pos.column
+        );
+        this.editor.setSelection(emptySelectionAtPosition);
+    }
+
+    private updateRemoteSelection(selection: monaco.Selection) {
+        const decorationsIds = this.model.getAllDecorations().map((d) => d.id);
+        this.model.deltaDecorations(
+            decorationsIds,
+            [{ range: selection, options: { inlineClassName: 'remoteSelectionDecoration' } }]
+        );
+    }
+
+    private removeRemoteSelection() {
+        const decorationsIds = this.model.getAllDecorations().map((d) => d.id);
+        this.model.deltaDecorations(decorationsIds, []);
+    }
+
+    private handleIncomingSelections(message: { clientId: string, selection: monaco.Selection }) {
+        if (message.clientId === this.clientId) {
+            return;
+        }
+        try {
+            this.isRemoteSelectionInProgress = true;
+            if (!monaco.Range.isEmpty(message.selection)) {
+                this.discardOwnSelection();
+            }
+            this.updateRemoteSelection(message.selection);
+        }
+        finally {
+            this.isRemoteSelectionInProgress = false;
+        }
     }
 
     private handleIncomingMessage(message: Message): void {
         if (message.clientId === this.clientId) {
             return;
         }
-
         if (message.type === 'edit') {
             this.handleIncomingEditMessage(message as EditMessage);
         } else {
@@ -125,13 +204,9 @@ class SyncEngine {
 
             // Drop selection if it was modified by remote edits
             const selection = this.editor.getSelection();
-            const pos = this.editor.getPosition();
-            const emptySelectionAtCurrentPosition = new monaco.Selection(
-                pos.lineNumber, pos.column, pos.lineNumber, pos.column
-            );
             message.edits.forEach((edit) => {
                 if (monaco.Range.areIntersectingOrTouching(edit.range, selection)) {
-                    this.editor.setSelection(emptySelectionAtCurrentPosition);
+                    this.discardOwnSelection();
                 }
             });
         }
@@ -165,7 +240,7 @@ class SyncEngine {
         this.postponeSync();
     }
 
-    private handleContentChange(event: monaco.editor.IModelContentChangedEvent) {
+    private onDidChangeContent(event: monaco.editor.IModelContentChangedEvent) {
         this.clientActivity += 1;
         this.postponeSync();
         if (!this.isRemoteChangeInProgress) {
@@ -183,18 +258,6 @@ class SyncEngine {
             type: 'edit',
             edits: edits
         };
-    }
-
-    // TODO heartbeat transmission should be a separate class / function
-    private sendHeartbeat(delayMillis: number = 0): void {
-        clearTimeout(this.heartbeatTimer);
-        this.heartbeatTimer = window.setTimeout(
-            () => {
-                this.pubSubClient.publish(this.heartbeatChannel, { clientId: this.clientId });
-                this.sendHeartbeat(SyncEngine.HEARTBEAT_DURATION);
-            },
-            delayMillis
-        );
     }
 
     private postponeSync() {

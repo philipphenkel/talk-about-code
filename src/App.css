@@ -11,3 +11,8 @@
   height: calc(100vh - 65px);
   font-family: 'Roboto Mono', monospace;
 }
+
+.remoteSelectionDecoration {
+	background: lightsalmon;
+  border-radius: 3px;
+}
