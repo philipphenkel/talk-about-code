@@ -54,14 +54,15 @@ class SyncEngine {
     private selectionsChannel: string;
     private clientId: string;
     private clientActivity: number;
-    private isRemoteChangeInProgress: boolean;
+    private isRemoteEditInProgress: boolean;
     private syncTimer: number;
     private heartbeatTimer: number;
     // tslint:disable-next-line:no-any
     private contentSubscription: any;
     // tslint:disable-next-line:no-any
     private selectionsSubscription: any;
-    private isRemoteSelectionInProgress: boolean;
+    private remoteSelectionDecorationId: string;
+    private isLocalSelectionPublished: boolean;
 
     constructor(
         editor: monaco.editor.ICodeEditor,
@@ -84,7 +85,7 @@ class SyncEngine {
         this.heartbeatChannel = `/${boardId}/heartbeat`;
         this.languageChannel = `/${boardId}/language`;
         this.selectionsChannel = `/${boardId}/selections`;
-        this.isRemoteChangeInProgress = false;
+        this.isRemoteEditInProgress = false;
         this.clientId = Utils.uuidv4();
         this.pubSubClient = pubSubClient;
         this.handleIncomingMessage = this.handleIncomingMessage.bind(this);
@@ -94,6 +95,8 @@ class SyncEngine {
         this.publishSyncAndScheduleNext = this.publishSyncAndScheduleNext.bind(this);
         this.model.onDidChangeContent(this.onDidChangeContent);
         this.editor.onDidChangeCursorSelection(this.onDidChangeCursorSelection);
+        this.remoteSelectionDecorationId = '';
+        this.isLocalSelectionPublished = false;
     }
 
     public start(): void {
@@ -130,11 +133,20 @@ class SyncEngine {
 
     // Extract selection handling in separate class
     private onDidChangeCursorSelection(e: monaco.editor.ICursorSelectionChangedEvent) {
-        if (!this.isRemoteSelectionInProgress) {
-            if (!e.selection.isEmpty()) {
-                this.removeRemoteSelection();
-            }
+        if (this.isRemoteEditInProgress) {
+            return;
+        }
+
+        const hasLocalSelection = !e.selection.isEmpty();
+        if (hasLocalSelection) {
+            // update our selection on remote boards
+            this.removeRemoteSelection();
             this.publishSelection(e);
+            this.isLocalSelectionPublished = true;
+        } else if (this.isLocalSelectionPublished) {
+            // discard our selection on remote boards by sending an empty selection
+            this.publishSelection(e);
+            this.isLocalSelectionPublished = false;
         }
     }
 
@@ -146,39 +158,47 @@ class SyncEngine {
     }
 
     private discardOwnSelection() {
-        const pos = this.editor.getPosition();
-        const emptySelectionAtPosition = new monaco.Selection(
-            pos.lineNumber, pos.column, pos.lineNumber, pos.column
-        );
-        this.editor.setSelection(emptySelectionAtPosition);
+        const hasLocalSelection = !this.editor.getSelection().isEmpty();
+        if (hasLocalSelection) {
+            const pos = this.editor.getPosition();
+            const emptySelectionAtPosition = new monaco.Selection(
+                pos.lineNumber, pos.column, pos.lineNumber, pos.column
+            );
+            this.editor.setSelection(emptySelectionAtPosition);
+        }
     }
 
     private updateRemoteSelection(selection: monaco.Selection) {
-        const decorationsIds = this.model.getAllDecorations().map((d) => d.id);
-        this.model.deltaDecorations(
-            decorationsIds,
-            [{ range: selection, options: { inlineClassName: 'remoteSelectionDecoration' } }]
+        const decorationIds = this.model.deltaDecorations(
+            [this.remoteSelectionDecorationId],
+            [{
+                range: selection,
+                options:
+                    {
+                        className: 'remoteSelectionDecoration',
+                        hoverMessage: 'Selection by remote user.',
+                        stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+                    }
+            }]
         );
+        this.remoteSelectionDecorationId = decorationIds[0];
     }
 
     private removeRemoteSelection() {
-        const decorationsIds = this.model.getAllDecorations().map((d) => d.id);
-        this.model.deltaDecorations(decorationsIds, []);
+        this.model.deltaDecorations([this.remoteSelectionDecorationId], []);
+        this.remoteSelectionDecorationId = '';
     }
 
     private handleIncomingSelections(message: { clientId: string, selection: monaco.Selection }) {
         if (message.clientId === this.clientId) {
             return;
         }
-        try {
-            this.isRemoteSelectionInProgress = true;
-            if (!monaco.Range.isEmpty(message.selection)) {
-                this.discardOwnSelection();
-            }
+
+        if (!monaco.Range.isEmpty(message.selection)) {
+            this.discardOwnSelection();
             this.updateRemoteSelection(message.selection);
-        }
-        finally {
-            this.isRemoteSelectionInProgress = false;
+        } else {
+            this.removeRemoteSelection();
         }
     }
 
@@ -197,22 +217,22 @@ class SyncEngine {
 
     private handleIncomingEditMessage(message: EditMessage) {
         try {
-            this.isRemoteChangeInProgress = true;
+            this.isRemoteEditInProgress = true;
 
             // Do not modify the undo stack on incoming edits. The user is only expecting to undo his edits.
             this.model.applyEdits(message.edits);
-
-            // Drop selection if it was modified by remote edits
-            const selection = this.editor.getSelection();
-            message.edits.forEach((edit) => {
-                if (monaco.Range.areIntersectingOrTouching(edit.range, selection)) {
-                    this.discardOwnSelection();
-                }
-            });
         }
         finally {
-            this.isRemoteChangeInProgress = false;
+            this.isRemoteEditInProgress = false;
         }
+
+        // Drop own selection if it was modified by remote edits
+        const selection = this.editor.getSelection();
+        message.edits.forEach((edit) => {
+            if (monaco.Range.areIntersectingOrTouching(edit.range, selection)) {
+                this.discardOwnSelection();
+            }
+        });
     }
 
     private handleIncomingSyncMessage(message: SyncMessage) {
@@ -225,9 +245,13 @@ class SyncEngine {
         if (message.content !== ourContent) {
             if (this.clientActivity <= message.clientActivity) {
                 // We received content from a more active client. Let's accept it.
-                this.isRemoteChangeInProgress = true;
-                this.model.setValue(message.content);
-                this.isRemoteChangeInProgress = false;
+                try {
+                    this.isRemoteEditInProgress = true;
+                    this.model.setValue(message.content);
+                }
+                finally {
+                    this.isRemoteEditInProgress = false;
+                }
                 this.clientActivity = message.clientActivity;
             } else {
                 // We received out-dated content. Share our content.
@@ -243,7 +267,7 @@ class SyncEngine {
     private onDidChangeContent(event: monaco.editor.IModelContentChangedEvent) {
         this.clientActivity += 1;
         this.postponeSync();
-        if (!this.isRemoteChangeInProgress) {
+        if (!this.isRemoteEditInProgress) {
             this.publishEdits(changesToEdits(event.changes));
         }
     }
