@@ -247,7 +247,8 @@ export default class App extends React.Component<AppProps, AppState> {
       occurrencesHighlight: false,
       selectionHighlight: false,
       scrollBeyondLastLine: false,
-      fontFamily: 'Roboto Mono',
+      fontFamily: 'Source Code Pro',
+      fontSize: 14,
       quickSuggestions: false,
       parameterHints: false,
     };
