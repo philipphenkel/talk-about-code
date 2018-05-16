@@ -1,20 +1,25 @@
 import * as React from 'react';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
-import { white, red500 } from 'material-ui/styles/colors';
-import CircularProgress from 'material-ui/CircularProgress';
+import { white, red400 } from 'material-ui/styles/colors';
 import SyncEngine from '../SyncEngine';
+
+enum ConnectionState {
+    Connecting = 1,
+    Connected,
+    Disconnected,
+}
 
 interface BoardStatusIconProps {
     // tslint:disable-next-line:no-any
     pubSubClient: any;
     boardId: string;
+    showErrorsOnly: boolean;
 }
 
 interface BoardStatusIconState {
-    hasConnectionFeedback: boolean;
-    isConnected: boolean;
     heartbeats: Heartbeat[];
+    connection: ConnectionState;
 }
 
 interface Heartbeat {
@@ -35,19 +40,34 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
         super(props);
 
         this.state = {
-            hasConnectionFeedback: false,
-            isConnected: false,
             heartbeats: [],
+            connection: ConnectionState.Connecting,
         };
 
         this.handleHeartbeat = this.handleHeartbeat.bind(this);
 
+        window.setTimeout(
+            () => {
+                if (this.state.connection === ConnectionState.Connecting) {
+                    if (this.getUserCount() === 0) {
+                        this.setState({ connection: ConnectionState.Disconnected });
+                    } else {
+                        this.setState({ connection: ConnectionState.Connected });
+                    }
+                }
+            },
+            SyncEngine.HEARTBEAT_DURATION * 2
+        );
+
         props.pubSubClient.on('transport:up', () => {
-            this.setState({ hasConnectionFeedback: true, isConnected: true });
+            this.setState({
+                connection: this.state.connection === ConnectionState.Connecting
+                    ? ConnectionState.Connecting : ConnectionState.Connected,
+            });
         });
 
         props.pubSubClient.on('transport:down', () => {
-            this.setState({ hasConnectionFeedback: true, isConnected: false });
+            this.setState({ connection: ConnectionState.Disconnected });
         });
     }
 
@@ -72,33 +92,34 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
     }
 
     public render() {
-        let symbol = <CircularProgress size={20} color="rgba(255, 255, 255, 0.7)" thickness={3} />;
-        let tooltip = 'Connecting to server';
+        let symbol = null;
+        let tooltip = '';
 
-        if (this.state.hasConnectionFeedback) {
-            if (this.state.isConnected) {
-                if (this.state.heartbeats.length <= 1) {
-                    tooltip = 'Waiting for other users to join this board';
-                } else {
-                    symbol = <FontIcon className="material-icons" color={white}>account_circle</FontIcon>;
-                    tooltip = `${this.state.heartbeats.length} users on this board`;
-                }
-            } else {
-                symbol = <FontIcon className="material-icons" color={red500}>error</FontIcon>;
-                tooltip = 'No connection to server';
+        if (this.state.connection === ConnectionState.Disconnected) {
+            symbol = <FontIcon className="material-icons" color={red400}>sync_problem</FontIcon>;
+            tooltip = 'No connection to server';
+
+        } else if (this.getUserCount() <= 1) {
+            if (this.state.connection === ConnectionState.Connected || !this.props.showErrorsOnly) {
+                symbol = <FontIcon className="material-icons" color={red400}>sync_disabled</FontIcon>;
+                tooltip = 'Waiting for people to join this board';
             }
+        } else if (!this.props.showErrorsOnly) {
+            symbol = <FontIcon className="material-icons" color={white}>sync</FontIcon>;
+            tooltip = `Sync between ${this.getUserCount()} people is established`;
         }
 
         return (
             <div>
                 <IconButton
+                    disabled={symbol ? false : true}
                     disableTouchRipple={true}
                     tooltip={tooltip}
                     tooltipPosition="bottom-center"
                 >
                     {symbol}
                 </IconButton>
-            </div>
+            </div >
         );
     }
 
@@ -115,9 +136,14 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
         heartbeats.push({ clientId: message.clientId, timestamp: timestamp } as Heartbeat);
 
         this.setState({
-            hasConnectionFeedback: true,
-            isConnected: true,
             heartbeats: heartbeats,
+            connection:
+                this.state.connection === ConnectionState.Connecting
+                    ? ConnectionState.Connecting : ConnectionState.Connected,
         });
+    }
+
+    private getUserCount(): number {
+        return this.state.heartbeats.length;
     }
 }

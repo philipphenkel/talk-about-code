@@ -317,7 +317,11 @@ export default class App extends React.Component<AppProps, AppState> {
             <ToolbarGroup>
               <ToolbarTitle text={Config.APP_TITLE} style={styles.title} />
               <div style={spacerStyle} />
-              <BoardStatusIcon boardId={this.state.boardId} pubSubClient={fayeClient} />
+              <BoardStatusIcon
+                boardId={this.state.boardId}
+                pubSubClient={fayeClient}
+                showErrorsOnly={this.state.role === Role.User}
+              />
             </ToolbarGroup>
             {renderAdminControls()}
           </Toolbar>
