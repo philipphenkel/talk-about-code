@@ -4,10 +4,11 @@ import IconButton from 'material-ui/IconButton';
 import { white, red400 } from 'material-ui/styles/colors';
 import SyncEngine from '../SyncEngine';
 
-enum ConnectionState {
-    Connecting = 1,
-    Connected,
-    Disconnected,
+enum SyncState {
+    NoServerConnection = 0,
+    WaitingForRemotePeople,
+    Syncing,
+    Intialising,
 }
 
 interface BoardStatusIconProps {
@@ -19,7 +20,7 @@ interface BoardStatusIconProps {
 
 interface BoardStatusIconState {
     heartbeats: Heartbeat[];
-    connection: ConnectionState;
+    sync: SyncState;
 }
 
 interface Heartbeat {
@@ -41,18 +42,20 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
 
         this.state = {
             heartbeats: [],
-            connection: ConnectionState.Connecting,
+            sync: SyncState.Intialising,
         };
 
         this.handleHeartbeat = this.handleHeartbeat.bind(this);
 
         window.setTimeout(
             () => {
-                if (this.state.connection === ConnectionState.Connecting) {
+                if (this.state.sync === SyncState.Intialising) {
                     if (this.getUserCount() === 0) {
-                        this.setState({ connection: ConnectionState.Disconnected });
+                        this.setState({ sync: SyncState.NoServerConnection });
+                    } else if (this.getUserCount() === 1) {
+                        this.setState({ sync: SyncState.WaitingForRemotePeople });
                     } else {
-                        this.setState({ connection: ConnectionState.Connected });
+                        this.setState({ sync: SyncState.Syncing });
                     }
                 }
             },
@@ -61,13 +64,13 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
 
         props.pubSubClient.on('transport:up', () => {
             this.setState({
-                connection: this.state.connection === ConnectionState.Connecting
-                    ? ConnectionState.Connecting : ConnectionState.Connected,
+                sync: this.state.sync === SyncState.Intialising
+                    ? SyncState.Intialising : SyncState.WaitingForRemotePeople,
             });
         });
 
         props.pubSubClient.on('transport:down', () => {
-            this.setState({ connection: ConnectionState.Disconnected });
+            this.setState({ sync: SyncState.NoServerConnection });
         });
     }
 
@@ -95,16 +98,19 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
         let symbol = null;
         let tooltip = '';
 
-        if (this.state.connection === ConnectionState.Disconnected) {
+        if (this.state.sync === SyncState.NoServerConnection) {
             symbol = <FontIcon className="material-icons" color={red400}>sync_problem</FontIcon>;
             tooltip = 'No connection to server';
 
-        } else if (this.getUserCount() <= 1) {
-            if (this.state.connection === ConnectionState.Connected || !this.props.showErrorsOnly) {
-                symbol = <FontIcon className="material-icons" color={red400}>sync_disabled</FontIcon>;
-                tooltip = 'Waiting for people to join this board';
-            }
-        } else if (!this.props.showErrorsOnly) {
+        } else if (this.state.sync === SyncState.Intialising && !this.props.showErrorsOnly) {
+            symbol = <FontIcon className="material-icons" color={red400}>sync_disabled</FontIcon>;
+            tooltip = 'Waiting for people to join this board';
+
+        } else if (this.state.sync === SyncState.WaitingForRemotePeople) {
+            symbol = <FontIcon className="material-icons" color={red400}>sync_disabled</FontIcon>;
+            tooltip = 'Waiting for people to join this board';
+
+        } else if (this.state.sync === SyncState.Syncing && !this.props.showErrorsOnly) {
             symbol = <FontIcon className="material-icons" color={white}>sync</FontIcon>;
             tooltip = `Sync between ${this.getUserCount()} people is established`;
         }
@@ -135,11 +141,17 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
 
         heartbeats.push({ clientId: message.clientId, timestamp: timestamp } as Heartbeat);
 
+        let connection = this.state.sync;
+
+        if (heartbeats.length > 1) {
+            connection = SyncState.Syncing;
+        } else if (this.state.sync === SyncState.Syncing) {
+            connection = SyncState.WaitingForRemotePeople;
+        }
+
         this.setState({
             heartbeats: heartbeats,
-            connection:
-                this.state.connection === ConnectionState.Connecting
-                    ? ConnectionState.Connecting : ConnectionState.Connected,
+            sync: connection,
         });
     }
 
