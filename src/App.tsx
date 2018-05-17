@@ -259,9 +259,14 @@ export default class App extends React.Component<AppProps, AppState> {
         color: 'white',
         fontSize: 30
       },
-      button: {
+      labelStyle: {
         color: 'white'
-      }
+      },
+      dropDownMenu: {
+        width: 200,
+        height: 56,
+        textAlign: 'right',
+      },
     };
 
     const languageItems = this.state.languages.map((language: string) => (
@@ -273,23 +278,27 @@ export default class App extends React.Component<AppProps, AppState> {
         return (
           <ToolbarGroup>
 
-            <DropDownMenu
-              value={this.state.selectedLanguage}
-              labelStyle={styles.button}
-              onChange={this.onSelectLanguage}
-            >
-              {languageItems}
-            </DropDownMenu>
+            <IconButton tooltip={'Create attendee link'} className="shareButton">
+              <FontIcon className="material-icons" color={white}>send</FontIcon>;
+            </IconButton>
 
             <IconButton tooltip={'Create a new board'} containerElement={<a href="/" target="_blank" />}>
               <FontIcon className="material-icons" color={white}>add_circle_outline</FontIcon>;
             </IconButton>
-            <IconButton tooltip={'Create attendee link'} className="shareButton">
-              <FontIcon className="material-icons" color={white}>send</FontIcon>;
-            </IconButton>
+
             <IconButton tooltip={'Create administrator link'} className="snapshotButton">
-              <FontIcon className="material-icons" color={white}>link</FontIcon>;
+              <FontIcon className="material-icons" color={white}>save_alt</FontIcon>;
             </IconButton>
+
+            <DropDownMenu
+              value={this.state.selectedLanguage}
+              labelStyle={styles.labelStyle}
+              onChange={this.onSelectLanguage}
+              style={styles.dropDownMenu}
+            >
+              {languageItems}
+            </DropDownMenu>
+
           </ToolbarGroup>
         );
       } else {
