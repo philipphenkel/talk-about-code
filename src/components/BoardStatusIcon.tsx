@@ -103,15 +103,15 @@ export default class BoardStatusIcon extends React.Component<BoardStatusIconProp
             tooltip = 'No connection to server';
 
         } else if (this.state.sync === SyncState.Intialising && !this.props.showErrorsOnly) {
-            symbol = <FontIcon className="material-icons" color={red400}>sync_disabled</FontIcon>;
+            symbol = <FontIcon className="material-icons" color={red400}>person</FontIcon>;
             tooltip = 'Waiting for people to join this board';
 
         } else if (this.state.sync === SyncState.WaitingForRemotePeople) {
-            symbol = <FontIcon className="material-icons" color={red400}>sync_disabled</FontIcon>;
+            symbol = <FontIcon className="material-icons" color={red400}>person</FontIcon>;
             tooltip = 'Waiting for people to join this board';
 
         } else if (this.state.sync === SyncState.Syncing && !this.props.showErrorsOnly) {
-            symbol = <FontIcon className="material-icons" color={white}>sync</FontIcon>;
+            symbol = <FontIcon className="material-icons" color={white}>group</FontIcon>;
             tooltip = `Sync between ${this.getUserCount()} people is established`;
         }
 
