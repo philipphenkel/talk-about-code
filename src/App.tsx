@@ -19,6 +19,11 @@ import * as Clipboard from 'clipboard';
 import { History } from 'history';
 import createBrowserHistory from 'history/createBrowserHistory';
 import { Config } from './Config';
+import * as Sentry from '@sentry/browser';
+
+Sentry.init({
+  dsn: Config.SENTRY_DSN,
+});
 
 const faye = require('faye');
 const fayeClient = new faye.Client(Config.FAYE_URL);
@@ -143,6 +148,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     if (pathArray.length >= 3 && pathArray[1] === 'board' && pathArray[2]) {
       // Connect to existing board as user
+      Sentry.captureMessage('connect to board');
       boardId = pathArray[2];
       role = Role.User;
 
@@ -160,6 +166,7 @@ export default class App extends React.Component<AppProps, AppState> {
       }
     } else {
       // Create new board
+      Sentry.captureMessage('create new board');
       role = Role.Admin;
       boardId = Utils.uuidv4();
     }

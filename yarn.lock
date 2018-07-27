@@ -2,6 +2,49 @@
 # yarn lockfile v1
 
 
+"@sentry/browser@^4.0.0-beta.11":
+  version "4.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@sentry/browser/-/browser-4.0.0-beta.11.tgz#30944be87f32ad06e99e2a923b0ce85e6dd4b57f"
+  dependencies:
+    "@sentry/core" "4.0.0-beta.11"
+    "@sentry/hub" "4.0.0-beta.11"
+    "@sentry/minimal" "4.0.0-beta.11"
+    "@sentry/types" "4.0.0-beta.11"
+    "@sentry/utils" "4.0.0-beta.11"
+
+"@sentry/core@4.0.0-beta.11":
+  version "4.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@sentry/core/-/core-4.0.0-beta.11.tgz#4f1632d24611ae360954ff3a2c9d68234ef84397"
+  dependencies:
+    "@sentry/hub" "4.0.0-beta.11"
+    "@sentry/minimal" "4.0.0-beta.11"
+    "@sentry/types" "4.0.0-beta.11"
+    "@sentry/utils" "4.0.0-beta.11"
+
+"@sentry/hub@4.0.0-beta.11":
+  version "4.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@sentry/hub/-/hub-4.0.0-beta.11.tgz#14447a240b333c3a959bffbc0adc7751b1ab10e2"
+  dependencies:
+    "@sentry/types" "4.0.0-beta.11"
+    "@sentry/utils" "4.0.0-beta.11"
+
+"@sentry/minimal@4.0.0-beta.11":
+  version "4.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@sentry/minimal/-/minimal-4.0.0-beta.11.tgz#c8ba4c8393bb0346c326df4b2b84006207a393c3"
+  dependencies:
+    "@sentry/hub" "4.0.0-beta.11"
+    "@sentry/types" "4.0.0-beta.11"
+
+"@sentry/types@4.0.0-beta.11":
+  version "4.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@sentry/types/-/types-4.0.0-beta.11.tgz#ab19d22dd164b40ad7162410c15a70d56851f8c5"
+
+"@sentry/utils@4.0.0-beta.11":
+  version "4.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@sentry/utils/-/utils-4.0.0-beta.11.tgz#c117044e46bac14c240f7b866ffe1d0dd8e23345"
+  dependencies:
+    "@sentry/types" "4.0.0-beta.11"
+
 "@types/clipboard@^1.5.34":
   version "1.5.36"
   resolved "https://registry.yarnpkg.com/@types/clipboard/-/clipboard-1.5.36.tgz#e79fffc758e94e7ff9de9898ae7561db3c2bdd51"
