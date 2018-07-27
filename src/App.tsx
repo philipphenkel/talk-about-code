@@ -6,7 +6,7 @@ import { MuiTheme } from 'material-ui/styles';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
-import { white, blueGrey700 } from 'material-ui/styles/colors';
+import { white, blueGrey700, red500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup, ToolbarTitle } from 'material-ui/Toolbar';
@@ -36,6 +36,7 @@ interface AppState {
   boardId: string;
   role: Role;
   clientId: string;
+  isHighContrast: boolean;
 }
 
 interface AppProps {
@@ -51,6 +52,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
   private editor: monaco.editor.ICodeEditor;
   private muiTheme: MuiTheme;
+  private muiThemeHighContrast: MuiTheme;
   private syncEngine: SyncEngine;
   private attendeeLinkClipBoard: Clipboard;
   private adminLinkClipBoard: Clipboard;
@@ -69,6 +71,7 @@ export default class App extends React.Component<AppProps, AppState> {
     this.onSave = this.onSave.bind(this);
     this.onCloseShareDialog = this.onCloseShareDialog.bind(this);
     this.onCloseSaveDialog = this.onCloseSaveDialog.bind(this);
+    this.onToggleContrast = this.onToggleContrast.bind(this);
     this.onEditorChange = this.onEditorChange.bind(this);
     this.handleLanguageUpdate = this.handleLanguageUpdate.bind(this);
 
@@ -80,11 +83,22 @@ export default class App extends React.Component<AppProps, AppState> {
       boardId: '',
       role: Role.User,
       clientId: Utils.uuidv4(),
+      isHighContrast: true,
     };
 
     this.muiTheme = getMuiTheme({
       palette: {
         primary1Color: blueGrey700,
+      },
+      toolbar: {
+        height: 65,
+        backgroundColor: blueGrey700,
+      }
+    });
+
+    this.muiThemeHighContrast = getMuiTheme({
+      palette: {
+        primary1Color: red500,
       },
       toolbar: {
         height: 65,
@@ -132,7 +146,7 @@ export default class App extends React.Component<AppProps, AppState> {
   editorDidMount(editor: monaco.editor.ICodeEditor) {
     this.editor = editor;
     this.editor.focus();
-
+      
     // Parse URL <host>/board/<boardId>/<boardConfigurationBase64>
     const loc = this.history.location;
     const pathArray = loc.pathname.split('/');
@@ -226,6 +240,10 @@ export default class App extends React.Component<AppProps, AppState> {
     this.setState({ isSaveDialogOpen: false });
   }
 
+  onToggleContrast() {
+    this.setState({ isHighContrast: !this.state.isHighContrast });
+  }
+
   onEditorChange() {
     if (this.state.role === Role.Admin) {
       clearTimeout(this.pathUpdateTimer);
@@ -242,7 +260,7 @@ export default class App extends React.Component<AppProps, AppState> {
       minimap: { enabled: false },
       contextmenu: true,
       folding: false,
-      theme: 'vs',
+      theme: this.state.isHighContrast ? 'hc-black' : 'vs-dark',
       automaticLayout: false,
       occurrencesHighlight: false,
       selectionHighlight: false,
@@ -273,23 +291,44 @@ export default class App extends React.Component<AppProps, AppState> {
       <MenuItem value={language} key={language} primaryText={language.toUpperCase()} />
     ));
 
-    const renderAdminControls = () => {
-      if (this.state.role === Role.Admin) {
-        return (
-          <ToolbarGroup>
+    const spacerStyle = {
+      paddingRight: 30,
+    };
 
+    const renderAdminControls = () => {
+      const isAdmin = this.state.role === Role.Admin;
+
+      return (
+        <ToolbarGroup>
+
+          {isAdmin &&
             <IconButton tooltip={'Create attendee link'} className="shareButton">
               <FontIcon className="material-icons" color={white}>send</FontIcon>;
             </IconButton>
+          }
 
+          {isAdmin &&
             <IconButton tooltip={'Create a new board'} containerElement={<a href="/" target="_blank" />}>
               <FontIcon className="material-icons" color={white}>add_circle_outline</FontIcon>;
             </IconButton>
+          }
 
+          {isAdmin &&
             <IconButton tooltip={'Create administrator link'} className="snapshotButton">
               <FontIcon className="material-icons" color={white}>save_alt</FontIcon>;
             </IconButton>
+          }
 
+          <IconButton 
+            tooltip={this.state.isHighContrast ? 'Switch to dark mode' : 'Switch to high contrast mode'} 
+            onClick={this.onToggleContrast}
+          >
+            <FontIcon className="material-icons" color={white}>
+              invert_colors
+            </FontIcon>
+          </IconButton>
+
+          {isAdmin &&
             <DropDownMenu
               value={this.state.selectedLanguage}
               labelStyle={styles.labelStyle}
@@ -298,16 +337,11 @@ export default class App extends React.Component<AppProps, AppState> {
             >
               {languageItems}
             </DropDownMenu>
-
-          </ToolbarGroup>
-        );
-      } else {
-        return '';
-      }
-    };
-
-    const spacerStyle = {
-      paddingRight: 30,
+          }
+          
+          <div style={spacerStyle} />
+        </ToolbarGroup>
+      );
     };
 
     const requireConfig = {
@@ -317,8 +351,12 @@ export default class App extends React.Component<AppProps, AppState> {
       },
     };
 
+    if (this.editor) {
+      monaco.editor.setTheme(this.state.isHighContrast ? 'hc-black' : 'vs-dark');
+    }
+
     return (
-      <MuiThemeProvider muiTheme={this.muiTheme}>
+      <MuiThemeProvider muiTheme={this.state.isHighContrast ? this.muiThemeHighContrast : this.muiTheme}>
         <div className="App">
           <ShareDialog open={this.state.isShareDialogOpen} onClose={this.onCloseShareDialog} />
           <SaveDialog open={this.state.isSaveDialogOpen} onClose={this.onCloseSaveDialog} />
